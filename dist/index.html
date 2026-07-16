@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <div class="app-container">
+  <button id="fullscreen-btn" title="Plein Écran">⛶</button>
+
+  <div id="game-select-screen" class="screen portrait-layout active">
+    <div class="hero-section">
+      <div class="logo-icon">🍸</div>
+      <h1>Le Cercle des<br><span class="highlight-text">Gamblers Disparus</span></h1>
+      <p class="subtitle" style="margin-bottom: 30px;">Choisissez votre poison.</p>
+    </div>
+    
+    <div class="games-list">
+      <button class="game-card" data-game="crash">
+        <span class="game-icon">🚀</span>
+        <div class="game-info">
+          <h3>Le Crash</h3>
+          <p>Misez, décollez, stoppez avant l'explosion !</p>
+        </div>
+      </button>
+      <button class="game-card" data-game="plinko">
+        <span class="game-icon">🎱</span>
+        <div class="game-info">
+          <h3>Le Plinko</h3>
+          <p>Lâchez les billes et priez les multiplicateurs !</p>
+        </div>
+      </button>
+      <button class="game-card" data-game="mines">
+        <span class="game-icon">💣</span>
+        <div class="game-info">
+          <h3>Les Mines</h3>
+          <p>Trouvez les diamants sans sauter !</p>
+        </div>
+      </button>
+      <button class="game-card" data-game="hilo">
+        <span class="game-icon">🃏</span>
+        <div class="game-info">
+          <h3>Le Hi-Lo</h3>
+          <p>La prochaine carte sera plus haute ou plus basse ?</p>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <div id="crash-screen" class="screen landscape-layout">
+    <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
+    <div class="left-panel">
+      
+      <div class="live-summary">
+        <div class="summary-header">
+          <h4>📊 Bilan</h4>
+          <div style="display:flex; gap:5px;">
+            <button class="toggle-total-btn active" id="crash-toggle-total">Mode Total : ON</button>
+            <button class="reset-total-btn" title="Remettre le bilan à zéro">🔄</button>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div id="crash-balance-box" class="stat-box neutral-box">
+            <span id="crash-balance-label" class="stat-label">Équilibre</span>
+            <span id="crash-live-balance" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="crash-betting-area" class="panel-section">
+        <label>Mise (Gorgées | Max 12) :</label>
+        <div class="quick-bets">
+          <button class="bet-btn crash-bet" data-bet="1">1</button>
+          <button class="bet-btn crash-bet" data-bet="3">3</button>
+          <button class="bet-btn crash-bet" data-bet="5">5</button>
+          <button class="bet-btn crash-bet" data-bet="8">8</button>
+        </div>
+        <input type="number" id="crash-custom-bet" placeholder="Max 12..." min="1" max="12" />
+        <button id="crash-place-bet-btn" class="action-btn start-btn-crash">DÉCOLLER 🚀</button>
+      </div>
+      <div id="crash-result-actions" class="hidden panel-section">
+        <button class="secondary-btn btn-play-again" data-target="crash">🔄 Autre manche</button>
+        <button class="primary-btn btn-return-menu">✅ Quitter le jeu</button>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="game-view" id="crash-game-view">
+        <canvas id="crash-canvas"></canvas>
+        <div id="rocket">🚀</div>
+        <div id="multiplier-display">1.00x</div>
+      </div>
+      <div class="action-footer">
+        <button id="stop-btn" class="action-btn cashout hidden locked" disabled>🔒 1.30x mini</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="plinko-screen" class="screen landscape-layout">
+    <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
+    <div class="left-panel">
+      
+      <div class="live-summary">
+        <div class="summary-header">
+          <h4>📊 Bilan</h4>
+          <div style="display:flex; gap:5px;">
+            <button class="toggle-total-btn active" id="plinko-toggle-total">Mode Total : ON</button>
+            <button class="reset-total-btn" title="Remettre le bilan à zéro">🔄</button>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div id="plinko-balance-box" class="stat-box neutral-box">
+            <span id="plinko-balance-label" class="stat-label">Équilibre</span>
+            <span id="plinko-live-balance" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="plinko-betting-area" class="panel-section">
+        <label>Plateau :</label>
+        <div class="plinko-mode-selector">
+            <div class="plinko-mode-btn active" data-mode="ange">
+                <span>⚖️</span>
+                <span>Ange & Démon</span>
+            </div>
+            <div class="plinko-mode-btn" data-mode="bazar">
+                <span>💣</span>
+                <span>Champ de Mines</span>
+            </div>
+        </div>
+
+        <label>Valeur d'une bille (Gorgées) :</label>
+        <div class="quick-bets">
+          <button class="bet-btn plinko-val" data-val="1">1</button>
+          <button class="bet-btn plinko-val" data-val="2">2</button>
+          <button class="bet-btn plinko-val" data-val="5">5</button>
+          <input type="number" id="plinko-custom-val" placeholder="..." min="1" style="flex: 1; padding: 8px; font-size: 1rem;"/>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button id="plinko-drop-btn" class="action-btn start-btn-plinko">LÂCHER ! 🎱</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="game-view" id="plinko-game-view">
+        <canvas id="plinko-bg-canvas"></canvas>
+        <canvas id="plinko-canvas"></canvas>
+      </div>
+      <div class="action-footer" style="color: #9ca3af; font-size: 0.9rem; text-align: center; padding: 0 10px;">
+        ⚠️ Le chiffre indiqué sur la case est appliqué directement au Bilan !
+      </div>
+    </div>
+  </div>
+
+  <div id="mines-screen" class="screen landscape-layout">
+    <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
+    <div class="left-panel">
+      
+      <div class="live-summary">
+        <div class="summary-header">
+          <h4>📊 Bilan</h4>
+          <div style="display:flex; gap:5px;">
+            <button class="toggle-total-btn active" id="mines-toggle-total">Mode Total : ON</button>
+            <button class="reset-total-btn" title="Remettre le bilan à zéro">🔄</button>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div id="mines-balance-box" class="stat-box neutral-box">
+            <span id="mines-balance-label" class="stat-label">Équilibre</span>
+            <span id="mines-live-balance" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="mines-betting-area" class="panel-section">
+        <label>Mise (Gorgées | Max 10) :</label>
+        <div class="quick-bets">
+          <button class="bet-btn mines-bet" data-bet="1">1</button>
+          <button class="bet-btn mines-bet" data-bet="3">3</button>
+          <button class="bet-btn mines-bet" data-bet="5">5</button>
+          <input type="number" id="mines-custom-bet" placeholder="Max 10..." min="1" max="10" style="flex: 1; padding: 8px; font-size: 1rem;"/>
+        </div>
+        
+        <label style="margin-top: 15px;">Nombre de Mines (1-24) :</label>
+        <input type="number" id="mines-count-input" value="3" min="1" max="24" style="margin-bottom: 15px;" />
+        
+        <button id="mines-start-btn" class="action-btn start-btn-mines">DÉMINER 💣</button>
+        <button id="mines-cashout-btn" class="action-btn hidden" style="background: var(--success); color: white; width: 100%;">Encaisser</button>
+      </div>
+      <div id="mines-result-actions" class="hidden panel-section">
+        <button class="secondary-btn btn-play-again" data-target="mines">🔄 Autre manche</button>
+        <button class="primary-btn btn-return-menu">✅ Quitter le jeu</button>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="game-view" style="background: var(--bg-color);">
+        <div class="mines-game-container">
+          <div id="mines-multiplier-display">1.00x</div>
+          <div id="mines-grid" class="mines-grid">
+            </div>
+        </div>
+      </div>
+      <div class="action-footer" style="color: #9ca3af; font-size: 0.9rem; text-align: center; padding: 0 10px;">
+        ⚠️ Diamant 💎 = Multiplicateur en hausse | Bombe 💣 = Perte de la mise !
+      </div>
+    </div>
+  </div>
+  
+  <div id="hilo-screen" class="screen landscape-layout">
+    <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
+    <div class="left-panel">
+      
+      <div class="live-summary">
+        <div class="summary-header">
+          <h4>📊 Bilan</h4>
+          <div style="display:flex; gap:5px;">
+            <button class="toggle-total-btn active" id="hilo-toggle-total">Mode Total : ON</button>
+            <button class="reset-total-btn" title="Remettre le bilan à zéro">🔄</button>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div id="hilo-balance-box" class="stat-box neutral-box">
+            <span id="hilo-balance-label" class="stat-label">Équilibre</span>
+            <span id="hilo-live-balance" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="hilo-betting-area" class="panel-section">
+        <label>Mise (Gorgées | Max 10) :</label>
+        <div class="quick-bets">
+          <button class="bet-btn hilo-bet" data-bet="1">1</button>
+          <button class="bet-btn hilo-bet" data-bet="3">3</button>
+          <button class="bet-btn hilo-bet" data-bet="5">5</button>
+          <input type="number" id="hilo-custom-bet" placeholder="Max 10..." min="1" max="10" style="flex: 1; padding: 8px; font-size: 1rem;"/>
+        </div>
+        
+        <label style="margin-top: 15px;">Mode Devin (Optionnel) :</label>
+        <input type="number" id="hilo-devin-input" placeholder="Objectif (ex: 3 cartes)..." min="1" max="15" style="margin-bottom: 15px;" />
+        
+        <button id="hilo-start-btn" class="action-btn start-btn-hilo">TIRER UNE CARTE 🃏</button>
+        <button id="hilo-cashout-btn" class="action-btn hidden" style="background: var(--success); color: white; width: 100%;">Encaisser</button>
+      </div>
+      
+      <div id="hilo-result-actions" class="hidden panel-section">
+        <button class="secondary-btn btn-play-again" data-target="hilo">🔄 Autre manche</button>
+        <button class="primary-btn btn-return-menu">✅ Quitter le jeu</button>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="game-view" style="background: radial-gradient(circle at center, #0f3d24 0%, #061b0f 100%);">
+        <div class="hilo-game-container">
+          <div id="hilo-multiplier-display" class="hilo-mult-header">1.00x</div>
+          
+          <div class="card-area">
+            <div id="hilo-active-card" class="playing-card facedown">
+               <div class="card-corner card-corner-top">
+                 <span class="rank"></span>
+                 <span class="suit"></span>
+               </div>
+               <div class="card-center-suit suit"></div>
+               <div class="card-corner card-corner-bottom">
+                 <span class="rank"></span>
+                 <span class="suit"></span>
+               </div>
+            </div>
+          </div>
+          
+          <div class="hilo-controls">
+            <button id="hilo-btn-higher" class="hilo-guess-btn btn-higher" disabled>
+              <span>⬆️ Plus Haut</span>
+              <span id="hilo-mult-higher" class="hilo-mult-hint">-</span>
+            </button>
+            <button id="hilo-btn-lower" class="hilo-guess-btn btn-lower" disabled>
+              <span>⬇️ Plus Bas</span>
+              <span id="hilo-mult-lower" class="hilo-mult-hint">-</span>
+            </button>
+          </div>
+          
+          <div id="hilo-history" class="hilo-history">
+             </div>
+        </div>
+      </div>
+      <div class="action-footer" style="color: #9ca3af; font-size: 0.9rem; text-align: center; padding: 0 10px;">
+        ⚠️ Même carte = Perdu ! ☠️ = Mort instantanée ! | Mode Devin = x1.5 de pénalité en cas d'échec.
+      </div>
+    </div>
+  </div>
+
+</div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js'></script><script  src="./script.js"></script>
+
+  </body>
+  
+</html>
