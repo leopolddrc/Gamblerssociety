@@ -607,13 +607,13 @@ function calculateMinesMultiplier(mines, diamonds) {
     mult *= (25 - i) / (25 - mines - i);
   }
   
-  // MEGA NERF DU DEMINEUR
-  mult = mult * 0.65; // Avantage maison massif (35% de taxe immédiate)
+  // AVANTAGE MAISON ALLÉGÉ : On retient 15% au lieu des 35% de tout à l'heure
+  mult = mult * 0.85; 
   
-  // Tassement de la courbe très brutal dès 1.8x
-  if (mult > 1.8) mult = 1.8 + ((mult - 1.8) * 0.15); 
+  // Tassement de la courbe beaucoup plus doux et qui arrive plus tard (à 2.50x)
+  if (mult > 2.50) mult = 2.50 + ((mult - 2.50) * 0.40); 
   
-  if (mult > 6.00) mult = 6.00; // Plafond strict, impossible d'aller plus haut
+  if (mult > 8.00) mult = 8.00; // Plafond strict
   
   return Math.max(1.0, mult); 
 }
@@ -838,13 +838,13 @@ function calculateHiloOdds() {
   
   let total = hiloObj.deck.length; 
   
-  // Ancien multiplicateur de base: 0.85. Nouveau: 0.65 (Hausse de la difficulté)
-  let multH = higherCount > 0 ? (total / higherCount) * 0.65 : 0;
-  let multL = lowerCount > 0 ? (total / lowerCount) * 0.65 : 0;
+  // HAUSSE DES GAINS : Le multiplicateur de base repasse à 0.85
+  let multH = higherCount > 0 ? (total / higherCount) * 0.85 : 0;
+  let multL = lowerCount > 0 ? (total / lowerCount) * 0.85 : 0;
   
-  // Tassement de la courbe ultra-agressif au-dessus de 1.15x
-  if (multH > 1.15) multH = 1.15 + ((multH - 1.15) * 0.25);
-  if (multL > 1.15) multL = 1.15 + ((multL - 1.15) * 0.25);
+  // Le freinage des cotes commence beaucoup plus tard (1.50x au lieu de 1.15x)
+  if (multH > 1.50) multH = 1.50 + ((multH - 1.50) * 0.50);
+  if (multL > 1.50) multL = 1.50 + ((multL - 1.50) * 0.50);
   
   return { 
       h: multH > 0 ? Math.max(1.05, multH) : 0, 
