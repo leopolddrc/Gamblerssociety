@@ -1001,7 +1001,7 @@ hiloCashoutBtn.addEventListener('click', () => {
   endHiloGame(true);
 });
 /* ==========================================================================
-   JEU 5 : LA ROULETTE RUSSE (Moteur 3D GSAP)
+   JEU 5 : LA ROULETTE RUSSE (Moteur 3D & Tir)
    ========================================================================== */
 let rouletteBet = 0;
 let rouletteChambers = [false, false, false, false, false, false];
@@ -1021,8 +1021,8 @@ const rouletteOddsInfo = document.getElementById('roulette-odds-info');
 const rouletteMultDisplay = document.getElementById('roulette-multiplier-display');
 const cylinder3d = document.getElementById('cylinder3d');
 const swipeIndicator = document.getElementById('swipe-indicator');
+const flatLoader = document.getElementById('flat-cylinder-loader');
 
-// Gestion des mises basique
 document.querySelectorAll('.roulette-bet').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.roulette-bet').forEach(b => b.classList.remove('selected-hilo'));
@@ -1049,19 +1049,35 @@ function resetRouletteUI() {
     isSpinning = false;
     document.getElementById('roulette-betting-area').classList.remove('hidden');
     document.getElementById('roulette-result-actions').classList.add('hidden');
+    
+    // Réinitialisation de l'interface
     swipeIndicator.classList.add('hidden');
+    flatLoader.classList.remove('hidden'); // On réaffiche le chargeur plat
     rouletteStartBtn.disabled = false;
     rouletteMultDisplay.textContent = "1.00x";
     rouletteMultDisplay.className = "hilo-mult-header";
     
-    // Remise à zéro propre avec GSAP
     currentRotationX = 0;
     gsap.set(cylinder3d, { rotationX: 0 });
-    document.querySelectorAll('.chamber-face').forEach(c => c.classList.remove('fired'));
+    gsap.set('#muzzle-flash', { opacity: 0 }); // On cache le flash du précédent tir
+    gsap.set('.gun-container', { x: 0, rotation: 0 }); // On remet l'arme droite
     if (typeof gererMusiques === "function") gererMusiques(1.0);
 }
 
-// Validation de la mise -> Active le mode Swipe
+// LOGIQUE DE CHARGEMENT : Uniquement sur le barillet plat en bas à droite
+document.querySelectorAll('.flat-chamber').forEach(chamber => {
+    chamber.addEventListener('click', () => {
+        if(rouletteObj.isPlaying) return;
+        const index = parseInt(chamber.dataset.index);
+        rouletteChambers[index] = !rouletteChambers[index];
+        
+        if (rouletteChambers[index]) chamber.classList.add('loaded');
+        else chamber.classList.remove('loaded');
+        
+        updateRouletteOdds();
+    });
+});
+
 rouletteStartBtn.addEventListener('click', () => {
     let loadedCount = rouletteChambers.filter(c => c).length;
     if (!rouletteBet || rouletteBet < 1 || loadedCount === 0) return animateBtnError('roulette-start-btn');
@@ -1073,59 +1089,39 @@ rouletteStartBtn.addEventListener('click', () => {
     rouletteObj.isPlaying = true;
     awaitingSwipe = true; 
     
-    // Aligner le barillet parfaitement avant le tir
-    currentRotationX = Math.round(currentRotationX / 60) * 60;
-    gsap.to(cylinder3d, {rotationX: currentRotationX, duration: 0.3});
-    
     document.getElementById('roulette-betting-area').classList.add('hidden');
+    flatLoader.classList.add('hidden'); // Le chargeur plat disparaît !
     rouletteMultDisplay.textContent = "TIRE !";
     swipeIndicator.classList.remove('hidden'); 
+    
+    // Le barillet 3D sur l'arme tourne d'un coup de façon dramatique
+    currentRotationX = Math.round(currentRotationX / 60) * 60 + 360; 
+    gsap.to(cylinder3d, {rotationX: currentRotationX, duration: 0.8, ease: "power2.out"});
 });
 
-/* --- MOTEUR PHYSIQUE 3D DU BARILLET --- */
 function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
 
-document.querySelectorAll('.chamber-face').forEach(face => {
-    face.addEventListener('click', (e) => {
-        // Bloque le clic si on est en train de jouer ou si on vient de glisser la souris
-        if(rouletteObj.isPlaying || isSpinning || Math.abs(getY(e) - dragStartY) > 5) return;
-        
-        const index = parseInt(face.dataset.index);
-        rouletteChambers[index] = !rouletteChambers[index];
-        if (rouletteChambers[index]) face.classList.add('loaded');
-        else face.classList.remove('loaded');
-        updateRouletteOdds();
-    });
-});
-
 function startDrag(e) {
-    if(isSpinning) return;
+    if(isSpinning || !awaitingSwipe) return;
     isDragging = true;
     dragStartY = getY(e);
     dragStartRot = currentRotationX;
 }
 
 function moveDrag(e) {
-    if(!isDragging || isSpinning) return;
+    if(!isDragging || isSpinning || !awaitingSwipe) return;
     let delta = getY(e) - dragStartY;
-    
-    // Pendant le chargement, on permet de tourner doucement le barillet
-    if(!awaitingSwipe) {
-        currentRotationX = dragStartRot - (delta * 0.5); // 0.5 pour adoucir la friction
-        gsap.set(cylinder3d, { rotationX: currentRotationX });
-    }
+    currentRotationX = dragStartRot - (delta * 0.5); 
+    gsap.set(cylinder3d, { rotationX: currentRotationX });
 }
 
 function endDrag(e) {
-    if(!isDragging || isSpinning) return;
+    if(!isDragging || isSpinning || !awaitingSwipe) return;
     isDragging = false;
     let delta = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - dragStartY;
     
-    if(awaitingSwipe) {
-        // Lancer la partie si le swipe est assez grand
-        if(Math.abs(delta) > 40) executeSpin(delta);
-    } else {
-        // Mode chargement : le barillet s'enclenche (magnétisme) sur la face la plus proche
+    if(Math.abs(delta) > 40) executeSpin(delta);
+    else {
         currentRotationX = Math.round(currentRotationX / 60) * 60;
         gsap.to(cylinder3d, { rotationX: currentRotationX, duration: 0.3, ease: "power2.out" });
     }
@@ -1147,9 +1143,8 @@ function executeSpin(delta) {
     const landedIndex = Math.floor(Math.random() * 6);
     let loadedCount = rouletteChambers.filter(c => c).length;
     
-    // Calcul mathématique pour que la face gagnante tombe pile face caméra
     let baseTargetAngle = -landedIndex * 60; 
-    let spinAmount = (delta > 0) ? -2160 : 2160; // 6 tours complets selon le sens du swipe
+    let spinAmount = (delta > 0) ? -2160 : 2160; 
     
     let targetRotation = currentRotationX + spinAmount;
     let remainder = targetRotation % 360;
@@ -1176,14 +1171,23 @@ function finishRoulette(landedIndex, loadedCount) {
     document.getElementById('roulette-result-actions').classList.remove('hidden');
     
     if (rouletteChambers[landedIndex]) {
-        document.querySelector(`.chamber-face[data-index="${landedIndex}"]`).classList.add('fired');
+        // PERDU : Animation de tir et gros recul
         rouletteMultDisplay.textContent = "BOUM ! 💥";
         rouletteMultDisplay.classList.add('crashed');
-        gsap.to('.gun-container', { x: 15, duration: 0.05, yoyo: true, repeat: 7 }); // Recul visuel de l'arme
+        
+        // Flash sortant du canon
+        gsap.to('#muzzle-flash', { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 });
+        // Recul ultra violent du pistolet (part vers la droite et pivote vers le haut)
+        gsap.to('.gun-container', { x: 50, rotation: -15, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.out", 
+            onComplete: () => {
+                gsap.to('.gun-container', { x: 0, rotation: 0, duration: 0.5, ease: "elastic.out(1, 0.5)" });
+            }
+        });
         
         if (loadedCount === 6) triggerMonkeyRain();
         if (typeof gererMusiques === "function") gererMusiques(1.0);
     } else {
+        // GAGNÉ : Pas de tir
         turnBalance += Math.round(rouletteBet * rouletteObj.mult);
         updateLiveSummary();
         rouletteMultDisplay.textContent = rouletteObj.mult.toFixed(2) + "x";
