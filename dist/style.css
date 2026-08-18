@@ -284,86 +284,56 @@ button:active { transform: scale(0.96); }
 @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
 
 /* ==========================================================================
-   CSS SPÉCIFIQUE : ROULETTE RUSSE
+   CSS SPÉCIFIQUE : ROULETTE RUSSE (3D SIDE VIEW)
    ========================================================================== */
-.roulette-loader-container { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 10px; }
-.loader-slot { 
-    width: 45px; height: 45px; border-radius: 50%; background: #374151; 
-    border: 2px solid #4b5563; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 1.5rem; transition: all 0.2s;
-}
-.loader-slot:hover { transform: scale(1.1); background: #4b5563; }
-.loader-slot.loaded { background: #dc2626; border-color: #f87171; box-shadow: 0 0 10px rgba(220, 38, 38, 0.5); }
-
 .roulette-odds-info { text-align: center; color: #9ca3af; font-weight: 600; margin-bottom: 15px; font-size: 0.95rem; }
 
-.roulette-gun-pointer { font-size: 3.5rem; z-index: 10; margin-bottom: -15px; text-shadow: 0 5px 15px rgba(0,0,0,0.5); filter: drop-shadow(0px 5px 2px rgba(0,0,0,0.3)); }
-.cylinder-visual {
-    width: 260px; height: 260px; border-radius: 50%; background: #3f3f46;
-    position: relative; border: 10px solid #52525b; box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.8);
-}
-.cylinder-chamber {
-    width: 64px; height: 64px; border-radius: 50%; background: #18181b;
-    position: absolute; top: 50%; left: 50%; margin: -32px 0 0 -32px;
-    box-shadow: inset 0 8px 15px rgba(0,0,0,0.9), 0 2px 4px rgba(255,255,255,0.1);
-    display: flex; justify-content: center; align-items: center; font-size: 2.2rem;
-    transition: all 0.3s;
-}
-.chamber-0 { transform: rotate(0deg) translateY(-85px) rotate(0deg); }
-.chamber-1 { transform: rotate(60deg) translateY(-85px) rotate(-60deg); }
-.chamber-2 { transform: rotate(120deg) translateY(-85px) rotate(-120deg); }
-.chamber-3 { transform: rotate(180deg) translateY(-85px) rotate(-180deg); }
-.chamber-4 { transform: rotate(240deg) translateY(-85px) rotate(-240deg); }
-.chamber-5 { transform: rotate(300deg) translateY(-85px) rotate(-300deg); }
-
-.cylinder-chamber.loaded::after { content: '🍾'; }
-.cylinder-chamber.fired { background: #dc2626; box-shadow: 0 0 30px #dc2626; }
-
-/* ==========================================================================
-   RESPONSIVE DESIGN (MOBILES)
-   ========================================================================== */
-@media (max-height: 480px) {
-  .left-panel { width: 280px; padding: 10px; padding-top: 50px;}
-  .live-summary { margin-bottom: 10px; }
-  .stat-box { padding: 5px; }
-  .stat-value { font-size: 1.2rem; }
-  .quick-bets { margin-bottom: 5px; gap: 5px; }
-  .bet-btn { padding: 8px 0; font-size: 0.9rem; }
-  input, select { padding: 8px; }
-  .action-btn { padding: 10px; margin-top: 10px; font-size: 1rem; }
-  #multiplier-display { font-size: 4rem; }
-  #multiplier-display.ghost { font-size: 3.5rem; }
-  .action-footer { height: 60px; }
-  .mines-grid { gap: 5px; max-width: 300px; }
-  .mine-cell { font-size: 1.5rem; border-width: 1px; }
-  #mines-multiplier-display { font-size: 2.5rem; margin-bottom: 10px; }
-  
-  .playing-card { width: 100px; height: 140px; }
-  .card-corner { font-size: 1rem; }
-  .card-center-suit { font-size: 3rem; }
-  .hilo-mult-header { font-size: 2.5rem; margin-bottom: 10px; }
-  .card-area { height: 160px; margin-bottom: 15px;}
-  .hilo-guess-btn { padding: 10px; font-size: 1rem; }
-  
-  .plinko-mode-selector { margin-bottom: 10px; gap: 5px;}
-  .plinko-mode-btn { padding: 5px; }
-  .plinko-mode-btn span:first-child { font-size: 1rem; margin-bottom: 2px;}
-  .plinko-mode-btn span:last-child { font-size: 0.8rem;}
-
-  .cylinder-visual { width: 180px; height: 180px; border-width: 6px; }
-  .cylinder-chamber { width: 44px; height: 44px; margin: -22px 0 0 -22px; font-size: 1.5rem; }
-  .chamber-0 { transform: rotate(0deg) translateY(-55px) rotate(0deg); }
-  .chamber-1 { transform: rotate(60deg) translateY(-55px) rotate(-60deg); }
-  .chamber-2 { transform: rotate(120deg) translateY(-55px) rotate(-120deg); }
-  .chamber-3 { transform: rotate(180deg) translateY(-55px) rotate(-180deg); }
-  .chamber-4 { transform: rotate(240deg) translateY(-55px) rotate(-240deg); }
-  .chamber-5 { transform: rotate(300deg) translateY(-55px) rotate(-300deg); }
-  .roulette-gun-pointer { font-size: 2.5rem; margin-bottom: -10px; }
-}
 @keyframes pulse {
-    0% { opacity: 0.5; transform: scale(0.95); }
-    50% { opacity: 1; transform: scale(1.05); }
-    100% { opacity: 0.5; transform: scale(0.95); }
+    0% { opacity: 0.4; transform: translateY(-5px); }
+    50% { opacity: 1; transform: translateY(5px); }
+    100% { opacity: 0.4; transform: translateY(-5px); }
 }
-.cylinder-chamber { cursor: pointer; }
-.cylinder-chamber:hover:not(.fired) { background: #27272a; }
+
+.gun-container {
+    position: relative;
+    width: 400px;
+    height: 250px;
+    transform-origin: center;
+}
+.gun-svg { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.8)); }
+
+/* L'espace où se loge le barillet dans le pistolet */
+.scene3d {
+    position: absolute; width: 70px; height: 60px;
+    left: 185px; top: 100px; /* Positionné exactement dans le trou du SVG */
+    perspective: 1000px; z-index: 2;
+}
+
+.cylinder3d {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d; cursor: grab;
+}
+.cylinder3d:active { cursor: grabbing; }
+
+.chamber-face {
+    position: absolute; width: 100%; height: 24px; top: 18px; /* Centré verticalement */
+    background: #3f3f46; border: 2px solid #18181b; border-radius: 4px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.2rem; color: transparent; transition: background 0.2s;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8); user-select: none;
+}
+.chamber-face.loaded { background: #dc2626; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); border-color: #f87171; }
+.chamber-face.loaded::after { content: '🍾'; }
+.chamber-face.fired { background: #ff0000; box-shadow: 0 0 30px #ff0000, inset 0 0 20px #000; }
+
+/* Construction cylindrique 3D (Rayon = ~21px) */
+.chamber-face:nth-child(1) { transform: rotateX(0deg) translateZ(21px); }
+.chamber-face:nth-child(2) { transform: rotateX(60deg) translateZ(21px); }
+.chamber-face:nth-child(3) { transform: rotateX(120deg) translateZ(21px); }
+.chamber-face:nth-child(4) { transform: rotateX(180deg) translateZ(21px); }
+.chamber-face:nth-child(5) { transform: rotateX(240deg) translateZ(21px); }
+.chamber-face:nth-child(6) { transform: rotateX(300deg) translateZ(21px); }
+
+@media (max-width: 480px) {
+    .gun-container { transform: scale(0.8); }
+}

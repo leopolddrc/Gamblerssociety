@@ -306,6 +306,7 @@
   <div id="roulette-screen" class="screen landscape-layout">
     <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
     <div class="left-panel">
+      
       <div class="live-summary">
         <div class="summary-header">
           <h4>📊 Bilan</h4>
@@ -331,12 +332,13 @@
           <input type="number" id="roulette-custom-bet" placeholder="Max 10" min="1" max="10" style="flex: 1; padding: 8px; font-size: 1rem;"/>
         </div>
         
-        <label style="margin-top: 20px;">Chargement :</label>
-        <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">👉 Clique directement sur les trous du barillet à droite pour placer tes bouteilles 🍾</p>
-        
         <div class="roulette-odds-info" id="roulette-odds-info">Multiplicateur potentiel : 1.00x</div>
         
         <button id="roulette-start-btn" class="action-btn" style="background: #dc2626; color: white; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);">VALIDER LA MISE ✅</button>
+        
+        <p style="color: #9ca3af; font-size: 0.85rem; margin-top: 15px; text-align:center;">
+          👉 Fais glisser le barillet à droite pour le tourner, et clique sur une chambre pour charger une 🍾.
+        </p>
       </div>
       
       <div id="roulette-result-actions" class="hidden panel-section">
@@ -346,27 +348,48 @@
     </div>
     
     <div class="right-panel">
-      <div class="game-view" style="background: radial-gradient(circle at center, #27272a 0%, #09090b 100%); display:flex; flex-direction:column; justify-content:center; align-items:center;">
+      <div class="game-view" style="background: radial-gradient(circle at center, #27272a 0%, #09090b 100%); display:flex; flex-direction:column; justify-content:center; align-items:center; overflow: hidden;">
         
-        <div id="roulette-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px;">1.00x</div>
+        <div id="roulette-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px; z-index: 10;">1.00x</div>
         
         <!-- NOUVEAU : Indicateur de Swipe -->
         <div id="swipe-indicator" class="hidden" style="position: absolute; z-index: 20; color: white; font-weight: 800; font-size: 1.5rem; text-shadow: 0 0 10px black; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: pulse 1.5s infinite;">
-            <span>👆</span>
-            <span>SWIPE POUR TOURNER</span>
-            <span>👇</span>
+            <span>SWIPE FORT POUR TOURNER</span>
+            <span style="font-size:2.5rem;">↕️</span>
         </div>
 
-        <div class="roulette-gun-pointer">⬇️</div>
-        <div id="roulette-cylinder" class="cylinder-visual" style="cursor: pointer;">
-            <div class="cylinder-chamber chamber-0" id="chamber-0" data-index="0"></div>
-            <div class="cylinder-chamber chamber-1" id="chamber-1" data-index="1"></div>
-            <div class="cylinder-chamber chamber-2" id="chamber-2" data-index="2"></div>
-            <div class="cylinder-chamber chamber-3" id="chamber-3" data-index="3"></div>
-            <div class="cylinder-chamber chamber-4" id="chamber-4" data-index="4"></div>
-            <div class="cylinder-chamber chamber-5" id="chamber-5" data-index="5"></div>
+        <div class="gun-container">
+            <!-- Pistolet de profil en SVG -->
+            <svg class="gun-svg" viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg">
+                <!-- Canon -->
+                <rect x="20" y="110" width="160" height="20" fill="#1f2937" rx="3"/>
+                <rect x="40" y="130" width="140" height="8" fill="#111827" rx="2"/>
+                <!-- Corps (Structure qui tient le barillet) -->
+                <path d="M 170 100 L 260 100 L 280 130 L 260 160 L 170 160 Z" fill="#27272a" />
+                <path d="M 170 95 L 265 95 L 265 100 L 170 100 Z" fill="#3f3f46" /> <!-- Reflet haut -->
+                <!-- Poignée -->
+                <path d="M 260 140 L 310 240 L 260 250 L 230 190 Z" fill="#451a03" />
+                <!-- Gâchette et pontet -->
+                <path d="M 180 160 C 180 200, 230 200, 230 160" fill="none" stroke="#111827" stroke-width="6" />
+                <path d="M 205 160 L 200 175" stroke="#4b5563" stroke-width="5" stroke-linecap="round"/>
+                <!-- Chien (Percuteur) -->
+                <path d="M 260 100 L 280 80 L 285 85 L 270 110" fill="#374151" />
+                <circle cx="265" cy="115" r="4" fill="#111827"/>
+            </svg>
+
+            <!-- Barillet 3D CSS -->
+            <div class="scene3d">
+                <div id="cylinder3d" class="cylinder3d">
+                    <div class="chamber-face" data-index="0"></div>
+                    <div class="chamber-face" data-index="1"></div>
+                    <div class="chamber-face" data-index="2"></div>
+                    <div class="chamber-face" data-index="3"></div>
+                    <div class="chamber-face" data-index="4"></div>
+                    <div class="chamber-face" data-index="5"></div>
+                </div>
+            </div>
         </div>
-        
+
       </div>
     </div>
   </div>

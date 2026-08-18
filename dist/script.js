@@ -1001,141 +1001,174 @@ hiloCashoutBtn.addEventListener('click', () => {
   endHiloGame(true);
 });
 /* ==========================================================================
-   JEU 5 : LA ROULETTE RUSSE
+   JEU 5 : LA ROULETTE RUSSE (Moteur 3D GSAP)
    ========================================================================== */
 let rouletteBet = 0;
 let rouletteChambers = [false, false, false, false, false, false];
 let rouletteObj = { isPlaying: false, mult: 1.00 };
-let awaitingSwipe = false; // Nouvelle variable pour bloquer le jeu en attendant le swipe
-let startY = 0; // Point de départ du swipe
+
+let currentRotationX = 0;
+let dragStartY = 0;
+let dragStartRot = 0;
+let isDragging = false;
+let isSpinning = false;
+let awaitingSwipe = false;
 
 const ROULETTE_MULTS = { 0: 1.0, 1: 1.25, 2: 1.60, 3: 2.20, 4: 3.50, 5: 7.00, 6: 0.00 };
 
 const rouletteStartBtn = document.getElementById('roulette-start-btn');
 const rouletteOddsInfo = document.getElementById('roulette-odds-info');
 const rouletteMultDisplay = document.getElementById('roulette-multiplier-display');
-const cylinderVisual = document.getElementById('roulette-cylinder');
+const cylinder3d = document.getElementById('cylinder3d');
 const swipeIndicator = document.getElementById('swipe-indicator');
 
-// Gestion des mises
+// Gestion des mises basique
 document.querySelectorAll('.roulette-bet').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.roulette-bet').forEach(b => b.classList.remove('selected-hilo'));
     btn.classList.add('selected-hilo'); rouletteBet = parseInt(btn.dataset.bet); document.getElementById('roulette-custom-bet').value = ''; 
   });
 });
-
 document.getElementById('roulette-custom-bet').addEventListener('input', (e) => {
   document.querySelectorAll('.roulette-bet').forEach(b => b.classList.remove('selected-hilo')); 
   rouletteBet = parseInt(e.target.value) || 0;
   if(rouletteBet > 10) { rouletteBet = 10; e.target.value = 10; }
 });
 
-// NOUVEAU : Charger directement sur le barillet
-document.querySelectorAll('.cylinder-chamber').forEach((chamber) => {
-    chamber.addEventListener('click', (e) => {
-        if(rouletteObj.isPlaying) return; // Impossible de modifier si on a déjà validé
-        
-        const index = parseInt(chamber.dataset.index);
-        rouletteChambers[index] = !rouletteChambers[index];
-        
-        if (rouletteChambers[index]) {
-            chamber.classList.add('loaded');
-        } else {
-            chamber.classList.remove('loaded');
-        }
-        updateRouletteOdds();
-    });
-});
-
 function updateRouletteOdds() {
     let loadedCount = rouletteChambers.filter(c => c).length;
     rouletteObj.mult = ROULETTE_MULTS[loadedCount];
-    
-    if (loadedCount === 0) {
-        rouletteOddsInfo.textContent = "Barillet vide... Met au moins une bouteille !";
-        rouletteOddsInfo.style.color = "#9ca3af";
-    } else if (loadedCount === 6) {
-        rouletteOddsInfo.textContent = "Mort certaine (x0) ☠️";
-        rouletteOddsInfo.style.color = "var(--danger)";
-    } else {
-        rouletteOddsInfo.textContent = `Gain potentiel : ${rouletteObj.mult.toFixed(2)}x (${loadedCount}/6 de perdre)`;
-        rouletteOddsInfo.style.color = "white";
-    }
+    if (loadedCount === 0) { rouletteOddsInfo.textContent = "Barillet vide..."; rouletteOddsInfo.style.color = "#9ca3af"; } 
+    else if (loadedCount === 6) { rouletteOddsInfo.textContent = "Mort certaine (x0) ☠️"; rouletteOddsInfo.style.color = "var(--danger)"; } 
+    else { rouletteOddsInfo.textContent = `Gain : ${rouletteObj.mult.toFixed(2)}x (${loadedCount}/6)`; rouletteOddsInfo.style.color = "white"; }
 }
 
 function resetRouletteUI() {
     rouletteObj.isPlaying = false;
     awaitingSwipe = false;
+    isSpinning = false;
     document.getElementById('roulette-betting-area').classList.remove('hidden');
     document.getElementById('roulette-result-actions').classList.add('hidden');
     swipeIndicator.classList.add('hidden');
     rouletteStartBtn.disabled = false;
     rouletteMultDisplay.textContent = "1.00x";
     rouletteMultDisplay.className = "hilo-mult-header";
-    gsap.set(cylinderVisual, { rotation: 0 });
     
-    document.querySelectorAll('.cylinder-chamber').forEach(c => c.classList.remove('fired'));
+    // Remise à zéro propre avec GSAP
+    currentRotationX = 0;
+    gsap.set(cylinder3d, { rotationX: 0 });
+    document.querySelectorAll('.chamber-face').forEach(c => c.classList.remove('fired'));
     if (typeof gererMusiques === "function") gererMusiques(1.0);
 }
 
-// Le bouton "Valider la mise" prépare le terrain mais ne tourne plus le barillet
+// Validation de la mise -> Active le mode Swipe
 rouletteStartBtn.addEventListener('click', () => {
     let loadedCount = rouletteChambers.filter(c => c).length;
-    if (!rouletteBet || rouletteBet < 1) return animateBtnError('roulette-start-btn');
-    if (loadedCount === 0) return animateBtnError('roulette-start-btn');
+    if (!rouletteBet || rouletteBet < 1 || loadedCount === 0) return animateBtnError('roulette-start-btn');
     
     if(!keepTotalBalance) turnBalance = 0;
     turnBalance -= rouletteBet; 
     updateLiveSummary();
     
     rouletteObj.isPlaying = true;
-    awaitingSwipe = true; // On attend le coup de doigt
+    awaitingSwipe = true; 
+    
+    // Aligner le barillet parfaitement avant le tir
+    currentRotationX = Math.round(currentRotationX / 60) * 60;
+    gsap.to(cylinder3d, {rotationX: currentRotationX, duration: 0.3});
     
     document.getElementById('roulette-betting-area').classList.add('hidden');
-    rouletteMultDisplay.textContent = "À TOI DE JOUER !";
-    swipeIndicator.classList.remove('hidden'); // Affiche le texte "SWIPE"
+    rouletteMultDisplay.textContent = "TIRE !";
+    swipeIndicator.classList.remove('hidden'); 
 });
 
-// NOUVEAU : Détection du Swipe
-function handleSwipeStart(e) {
-    if (!awaitingSwipe) return;
-    // On enregistre la position Y (souris ou doigt)
-    startY = e.touches ? e.touches[0].clientY : e.clientY; 
+/* --- MOTEUR PHYSIQUE 3D DU BARILLET --- */
+function getY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+
+document.querySelectorAll('.chamber-face').forEach(face => {
+    face.addEventListener('click', (e) => {
+        // Bloque le clic si on est en train de jouer ou si on vient de glisser la souris
+        if(rouletteObj.isPlaying || isSpinning || Math.abs(getY(e) - dragStartY) > 5) return;
+        
+        const index = parseInt(face.dataset.index);
+        rouletteChambers[index] = !rouletteChambers[index];
+        if (rouletteChambers[index]) face.classList.add('loaded');
+        else face.classList.remove('loaded');
+        updateRouletteOdds();
+    });
+});
+
+function startDrag(e) {
+    if(isSpinning) return;
+    isDragging = true;
+    dragStartY = getY(e);
+    dragStartRot = currentRotationX;
 }
 
-function handleSwipeEnd(e) {
-    if (!awaitingSwipe) return;
-    let endY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+function moveDrag(e) {
+    if(!isDragging || isSpinning) return;
+    let delta = getY(e) - dragStartY;
     
-    // Si la distance parcourue de haut en bas (ou bas en haut) dépasse 40 pixels, c'est un swipe valide
-    if (Math.abs(startY - endY) > 40) {
-        executeSpin();
+    // Pendant le chargement, on permet de tourner doucement le barillet
+    if(!awaitingSwipe) {
+        currentRotationX = dragStartRot - (delta * 0.5); // 0.5 pour adoucir la friction
+        gsap.set(cylinder3d, { rotationX: currentRotationX });
     }
 }
 
-// Ajout des écouteurs tactiles et souris sur le barillet
-cylinderVisual.addEventListener('touchstart', handleSwipeStart, {passive: true});
-cylinderVisual.addEventListener('touchend', handleSwipeEnd);
-cylinderVisual.addEventListener('mousedown', handleSwipeStart);
-cylinderVisual.addEventListener('mouseup', handleSwipeEnd);
+function endDrag(e) {
+    if(!isDragging || isSpinning) return;
+    isDragging = false;
+    let delta = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - dragStartY;
+    
+    if(awaitingSwipe) {
+        // Lancer la partie si le swipe est assez grand
+        if(Math.abs(delta) > 40) executeSpin(delta);
+    } else {
+        // Mode chargement : le barillet s'enclenche (magnétisme) sur la face la plus proche
+        currentRotationX = Math.round(currentRotationX / 60) * 60;
+        gsap.to(cylinder3d, { rotationX: currentRotationX, duration: 0.3, ease: "power2.out" });
+    }
+}
 
-function executeSpin() {
+cylinder3d.addEventListener('mousedown', startDrag);
+window.addEventListener('mousemove', moveDrag);
+window.addEventListener('mouseup', endDrag);
+cylinder3d.addEventListener('touchstart', startDrag, {passive: true});
+window.addEventListener('touchmove', moveDrag, {passive: true});
+window.addEventListener('touchend', endDrag);
+
+function executeSpin(delta) {
     awaitingSwipe = false;
+    isSpinning = true;
     swipeIndicator.classList.add('hidden');
     rouletteMultDisplay.textContent = "SPINNING...";
     
+    const landedIndex = Math.floor(Math.random() * 6);
     let loadedCount = rouletteChambers.filter(c => c).length;
-    const targetChamberIndex = Math.floor(Math.random() * 6);
     
-    // On ajoute de la force de rotation pour l'effet visuel (2160° = 6 tours)
-    const targetRotation = 2160 - (targetChamberIndex * 60);
+    // Calcul mathématique pour que la face gagnante tombe pile face caméra
+    let baseTargetAngle = -landedIndex * 60; 
+    let spinAmount = (delta > 0) ? -2160 : 2160; // 6 tours complets selon le sens du swipe
     
-    gsap.to(cylinderVisual, {
-        rotation: targetRotation, 
-        duration: 4.5, 
+    let targetRotation = currentRotationX + spinAmount;
+    let remainder = targetRotation % 360;
+    let correction = baseTargetAngle - remainder;
+    
+    if (correction > 180) correction -= 360;
+    if (correction < -180) correction += 360;
+    
+    targetRotation += correction;
+    currentRotationX = targetRotation;
+    
+    gsap.to(cylinder3d, {
+        rotationX: targetRotation, 
+        duration: 4.0, 
         ease: "power4.out",
-        onComplete: () => { finishRoulette(targetChamberIndex, loadedCount); }
+        onComplete: () => { 
+            isSpinning = false;
+            finishRoulette(landedIndex, loadedCount); 
+        }
     });
 }
 
@@ -1143,10 +1176,10 @@ function finishRoulette(landedIndex, loadedCount) {
     document.getElementById('roulette-result-actions').classList.remove('hidden');
     
     if (rouletteChambers[landedIndex]) {
-        document.getElementById(`chamber-${landedIndex}`).classList.add('fired');
+        document.querySelector(`.chamber-face[data-index="${landedIndex}"]`).classList.add('fired');
         rouletteMultDisplay.textContent = "BOUM ! 💥";
         rouletteMultDisplay.classList.add('crashed');
-        gsap.to(cylinderVisual, { x: 15, duration: 0.1, yoyo: true, repeat: 5 });
+        gsap.to('.gun-container', { x: 15, duration: 0.05, yoyo: true, repeat: 7 }); // Recul visuel de l'arme
         
         if (loadedCount === 6) triggerMonkeyRain();
         if (typeof gererMusiques === "function") gererMusiques(1.0);
@@ -1155,7 +1188,6 @@ function finishRoulette(landedIndex, loadedCount) {
         updateLiveSummary();
         rouletteMultDisplay.textContent = rouletteObj.mult.toFixed(2) + "x";
         rouletteMultDisplay.classList.add('cashed-out');
-        
         if (typeof gererMusiques === "function") gererMusiques(rouletteObj.mult);
     }
 }
