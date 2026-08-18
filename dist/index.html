@@ -306,7 +306,6 @@
   <div id="roulette-screen" class="screen landscape-layout">
     <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
     <div class="left-panel">
-      
       <div class="live-summary">
         <div class="summary-header">
           <h4>📊 Bilan</h4>
@@ -332,19 +331,12 @@
           <input type="number" id="roulette-custom-bet" placeholder="Max 10" min="1" max="10" style="flex: 1; padding: 8px; font-size: 1rem;"/>
         </div>
         
-        <label style="margin-top: 20px;">Charger le barillet (Clique pour ajouter 🍾) :</label>
-        <div class="roulette-loader-container">
-            <div class="loader-slot" data-index="0"></div>
-            <div class="loader-slot" data-index="1"></div>
-            <div class="loader-slot" data-index="2"></div>
-            <div class="loader-slot" data-index="3"></div>
-            <div class="loader-slot" data-index="4"></div>
-            <div class="loader-slot" data-index="5"></div>
-        </div>
+        <label style="margin-top: 20px;">Chargement :</label>
+        <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">👉 Clique directement sur les trous du barillet à droite pour placer tes bouteilles 🍾</p>
         
         <div class="roulette-odds-info" id="roulette-odds-info">Multiplicateur potentiel : 1.00x</div>
         
-        <button id="roulette-start-btn" class="action-btn" style="background: #dc2626; color: white; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);">TIRER ! 🔫</button>
+        <button id="roulette-start-btn" class="action-btn" style="background: #dc2626; color: white; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);">VALIDER LA MISE ✅</button>
       </div>
       
       <div id="roulette-result-actions" class="hidden panel-section">
@@ -358,14 +350,21 @@
         
         <div id="roulette-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px;">1.00x</div>
         
+        <!-- NOUVEAU : Indicateur de Swipe -->
+        <div id="swipe-indicator" class="hidden" style="position: absolute; z-index: 20; color: white; font-weight: 800; font-size: 1.5rem; text-shadow: 0 0 10px black; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: pulse 1.5s infinite;">
+            <span>👆</span>
+            <span>SWIPE POUR TOURNER</span>
+            <span>👇</span>
+        </div>
+
         <div class="roulette-gun-pointer">⬇️</div>
-        <div id="roulette-cylinder" class="cylinder-visual">
-            <div class="cylinder-chamber chamber-0" id="chamber-0"></div>
-            <div class="cylinder-chamber chamber-1" id="chamber-1"></div>
-            <div class="cylinder-chamber chamber-2" id="chamber-2"></div>
-            <div class="cylinder-chamber chamber-3" id="chamber-3"></div>
-            <div class="cylinder-chamber chamber-4" id="chamber-4"></div>
-            <div class="cylinder-chamber chamber-5" id="chamber-5"></div>
+        <div id="roulette-cylinder" class="cylinder-visual" style="cursor: pointer;">
+            <div class="cylinder-chamber chamber-0" id="chamber-0" data-index="0"></div>
+            <div class="cylinder-chamber chamber-1" id="chamber-1" data-index="1"></div>
+            <div class="cylinder-chamber chamber-2" id="chamber-2" data-index="2"></div>
+            <div class="cylinder-chamber chamber-3" id="chamber-3" data-index="3"></div>
+            <div class="cylinder-chamber chamber-4" id="chamber-4" data-index="4"></div>
+            <div class="cylinder-chamber chamber-5" id="chamber-5" data-index="5"></div>
         </div>
         
       </div>

@@ -360,3 +360,10 @@ button:active { transform: scale(0.96); }
   .chamber-5 { transform: rotate(300deg) translateY(-55px) rotate(-300deg); }
   .roulette-gun-pointer { font-size: 2.5rem; margin-bottom: -10px; }
 }
+@keyframes pulse {
+    0% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.5; transform: scale(0.95); }
+}
+.cylinder-chamber { cursor: pointer; }
+.cylinder-chamber:hover:not(.fired) { background: #27272a; }

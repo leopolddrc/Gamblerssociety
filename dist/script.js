@@ -1006,6 +1006,8 @@ hiloCashoutBtn.addEventListener('click', () => {
 let rouletteBet = 0;
 let rouletteChambers = [false, false, false, false, false, false];
 let rouletteObj = { isPlaying: false, mult: 1.00 };
+let awaitingSwipe = false; // Nouvelle variable pour bloquer le jeu en attendant le swipe
+let startY = 0; // Point de départ du swipe
 
 const ROULETTE_MULTS = { 0: 1.0, 1: 1.25, 2: 1.60, 3: 2.20, 4: 3.50, 5: 7.00, 6: 0.00 };
 
@@ -1013,6 +1015,7 @@ const rouletteStartBtn = document.getElementById('roulette-start-btn');
 const rouletteOddsInfo = document.getElementById('roulette-odds-info');
 const rouletteMultDisplay = document.getElementById('roulette-multiplier-display');
 const cylinderVisual = document.getElementById('roulette-cylinder');
+const swipeIndicator = document.getElementById('swipe-indicator');
 
 // Gestion des mises
 document.querySelectorAll('.roulette-bet').forEach(btn => {
@@ -1028,21 +1031,18 @@ document.getElementById('roulette-custom-bet').addEventListener('input', (e) => 
   if(rouletteBet > 10) { rouletteBet = 10; e.target.value = 10; }
 });
 
-// Charger le barillet (UI)
-document.querySelectorAll('.loader-slot').forEach(slot => {
-    slot.addEventListener('click', () => {
-        if(rouletteObj.isPlaying) return;
-        const index = parseInt(slot.dataset.index);
+// NOUVEAU : Charger directement sur le barillet
+document.querySelectorAll('.cylinder-chamber').forEach((chamber) => {
+    chamber.addEventListener('click', (e) => {
+        if(rouletteObj.isPlaying) return; // Impossible de modifier si on a déjà validé
+        
+        const index = parseInt(chamber.dataset.index);
         rouletteChambers[index] = !rouletteChambers[index];
         
         if (rouletteChambers[index]) {
-            slot.classList.add('loaded');
-            slot.textContent = '🍾';
-            document.getElementById(`chamber-${index}`).classList.add('loaded');
+            chamber.classList.add('loaded');
         } else {
-            slot.classList.remove('loaded');
-            slot.textContent = '';
-            document.getElementById(`chamber-${index}`).classList.remove('loaded');
+            chamber.classList.remove('loaded');
         }
         updateRouletteOdds();
     });
@@ -1066,35 +1066,69 @@ function updateRouletteOdds() {
 
 function resetRouletteUI() {
     rouletteObj.isPlaying = false;
+    awaitingSwipe = false;
     document.getElementById('roulette-betting-area').classList.remove('hidden');
     document.getElementById('roulette-result-actions').classList.add('hidden');
+    swipeIndicator.classList.add('hidden');
     rouletteStartBtn.disabled = false;
     rouletteMultDisplay.textContent = "1.00x";
     rouletteMultDisplay.className = "hilo-mult-header";
     gsap.set(cylinderVisual, { rotation: 0 });
     
-    // Nettoyer visuellement les explosions
     document.querySelectorAll('.cylinder-chamber').forEach(c => c.classList.remove('fired'));
     if (typeof gererMusiques === "function") gererMusiques(1.0);
 }
 
+// Le bouton "Valider la mise" prépare le terrain mais ne tourne plus le barillet
 rouletteStartBtn.addEventListener('click', () => {
     let loadedCount = rouletteChambers.filter(c => c).length;
     if (!rouletteBet || rouletteBet < 1) return animateBtnError('roulette-start-btn');
     if (loadedCount === 0) return animateBtnError('roulette-start-btn');
     
     if(!keepTotalBalance) turnBalance = 0;
-    turnBalance -= rouletteBet; // On paye la mise
+    turnBalance -= rouletteBet; 
     updateLiveSummary();
     
     rouletteObj.isPlaying = true;
+    awaitingSwipe = true; // On attend le coup de doigt
+    
     document.getElementById('roulette-betting-area').classList.add('hidden');
+    rouletteMultDisplay.textContent = "À TOI DE JOUER !";
+    swipeIndicator.classList.remove('hidden'); // Affiche le texte "SWIPE"
+});
+
+// NOUVEAU : Détection du Swipe
+function handleSwipeStart(e) {
+    if (!awaitingSwipe) return;
+    // On enregistre la position Y (souris ou doigt)
+    startY = e.touches ? e.touches[0].clientY : e.clientY; 
+}
+
+function handleSwipeEnd(e) {
+    if (!awaitingSwipe) return;
+    let endY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    
+    // Si la distance parcourue de haut en bas (ou bas en haut) dépasse 40 pixels, c'est un swipe valide
+    if (Math.abs(startY - endY) > 40) {
+        executeSpin();
+    }
+}
+
+// Ajout des écouteurs tactiles et souris sur le barillet
+cylinderVisual.addEventListener('touchstart', handleSwipeStart, {passive: true});
+cylinderVisual.addEventListener('touchend', handleSwipeEnd);
+cylinderVisual.addEventListener('mousedown', handleSwipeStart);
+cylinderVisual.addEventListener('mouseup', handleSwipeEnd);
+
+function executeSpin() {
+    awaitingSwipe = false;
+    swipeIndicator.classList.add('hidden');
     rouletteMultDisplay.textContent = "SPINNING...";
     
-    // On calcule la rotation pour que le hasard frappe
+    let loadedCount = rouletteChambers.filter(c => c).length;
     const targetChamberIndex = Math.floor(Math.random() * 6);
-    // Chaque chambre représente 60 degrés. Pour amener la target en haut (0°), on tourne de -target * 60
-    // On ajoute 6 tours complets (2160°) pour l'effet visuel du suspense
+    
+    // On ajoute de la force de rotation pour l'effet visuel (2160° = 6 tours)
     const targetRotation = 2160 - (targetChamberIndex * 60);
     
     gsap.to(cylinderVisual, {
@@ -1103,30 +1137,25 @@ rouletteStartBtn.addEventListener('click', () => {
         ease: "power4.out",
         onComplete: () => { finishRoulette(targetChamberIndex, loadedCount); }
     });
-});
+}
 
 function finishRoulette(landedIndex, loadedCount) {
     document.getElementById('roulette-result-actions').classList.remove('hidden');
     
     if (rouletteChambers[landedIndex]) {
-        // PAN ! La chambre était chargée
         document.getElementById(`chamber-${landedIndex}`).classList.add('fired');
         rouletteMultDisplay.textContent = "BOUM ! 💥";
         rouletteMultDisplay.classList.add('crashed');
         gsap.to(cylinderVisual, { x: 15, duration: 0.1, yoyo: true, repeat: 5 });
         
-        // Si c'est un suicide volontaire (6 balles)
         if (loadedCount === 6) triggerMonkeyRain();
-        
         if (typeof gererMusiques === "function") gererMusiques(1.0);
     } else {
-        // Clic... Rien ne sort. Gagné !
         turnBalance += Math.round(rouletteBet * rouletteObj.mult);
         updateLiveSummary();
         rouletteMultDisplay.textContent = rouletteObj.mult.toFixed(2) + "x";
         rouletteMultDisplay.classList.add('cashed-out');
         
-        // Petite musique de tension / victoire si gain énorme
         if (typeof gererMusiques === "function") gererMusiques(rouletteObj.mult);
     }
 }
