@@ -69,7 +69,7 @@ const screens = {
   crash: document.getElementById('crash-screen'),
   plinko: document.getElementById('plinko-screen'),
   mines: document.getElementById('mines-screen'),
-  hilo: document.getElementById('hilo-screen')
+  hilo: document.getElementById('hilo-screen'),
   roulette: document.getElementById('roulette-screen')
 };
 
