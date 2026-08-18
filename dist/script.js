@@ -70,6 +70,7 @@ const screens = {
   plinko: document.getElementById('plinko-screen'),
   mines: document.getElementById('mines-screen'),
   hilo: document.getElementById('hilo-screen')
+  roulette: document.getElementById('roulette-screen')
 };
 
 // ==========================================================================
@@ -171,7 +172,7 @@ function updateLiveSummary() {
     boxClass = "danger-box";
   }
 
-  ['crash', 'plinko', 'mines', 'hilo'].forEach(game => {
+  ['crash', 'plinko', 'mines', 'hilo', 'roulette'].forEach(game => {
     const box = document.getElementById(`${game}-balance-box`);
     if(box) {
       box.className = `stat-box ${boxClass}`;
@@ -999,3 +1000,133 @@ hiloCashoutBtn.addEventListener('click', () => {
   
   endHiloGame(true);
 });
+/* ==========================================================================
+   JEU 5 : LA ROULETTE RUSSE
+   ========================================================================== */
+let rouletteBet = 0;
+let rouletteChambers = [false, false, false, false, false, false];
+let rouletteObj = { isPlaying: false, mult: 1.00 };
+
+const ROULETTE_MULTS = { 0: 1.0, 1: 1.25, 2: 1.60, 3: 2.20, 4: 3.50, 5: 7.00, 6: 0.00 };
+
+const rouletteStartBtn = document.getElementById('roulette-start-btn');
+const rouletteOddsInfo = document.getElementById('roulette-odds-info');
+const rouletteMultDisplay = document.getElementById('roulette-multiplier-display');
+const cylinderVisual = document.getElementById('roulette-cylinder');
+
+// Gestion des mises
+document.querySelectorAll('.roulette-bet').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.roulette-bet').forEach(b => b.classList.remove('selected-hilo'));
+    btn.classList.add('selected-hilo'); rouletteBet = parseInt(btn.dataset.bet); document.getElementById('roulette-custom-bet').value = ''; 
+  });
+});
+
+document.getElementById('roulette-custom-bet').addEventListener('input', (e) => {
+  document.querySelectorAll('.roulette-bet').forEach(b => b.classList.remove('selected-hilo')); 
+  rouletteBet = parseInt(e.target.value) || 0;
+  if(rouletteBet > 10) { rouletteBet = 10; e.target.value = 10; }
+});
+
+// Charger le barillet (UI)
+document.querySelectorAll('.loader-slot').forEach(slot => {
+    slot.addEventListener('click', () => {
+        if(rouletteObj.isPlaying) return;
+        const index = parseInt(slot.dataset.index);
+        rouletteChambers[index] = !rouletteChambers[index];
+        
+        if (rouletteChambers[index]) {
+            slot.classList.add('loaded');
+            slot.textContent = '🍾';
+            document.getElementById(`chamber-${index}`).classList.add('loaded');
+        } else {
+            slot.classList.remove('loaded');
+            slot.textContent = '';
+            document.getElementById(`chamber-${index}`).classList.remove('loaded');
+        }
+        updateRouletteOdds();
+    });
+});
+
+function updateRouletteOdds() {
+    let loadedCount = rouletteChambers.filter(c => c).length;
+    rouletteObj.mult = ROULETTE_MULTS[loadedCount];
+    
+    if (loadedCount === 0) {
+        rouletteOddsInfo.textContent = "Barillet vide... Met au moins une bouteille !";
+        rouletteOddsInfo.style.color = "#9ca3af";
+    } else if (loadedCount === 6) {
+        rouletteOddsInfo.textContent = "Mort certaine (x0) ☠️";
+        rouletteOddsInfo.style.color = "var(--danger)";
+    } else {
+        rouletteOddsInfo.textContent = `Gain potentiel : ${rouletteObj.mult.toFixed(2)}x (${loadedCount}/6 de perdre)`;
+        rouletteOddsInfo.style.color = "white";
+    }
+}
+
+function resetRouletteUI() {
+    rouletteObj.isPlaying = false;
+    document.getElementById('roulette-betting-area').classList.remove('hidden');
+    document.getElementById('roulette-result-actions').classList.add('hidden');
+    rouletteStartBtn.disabled = false;
+    rouletteMultDisplay.textContent = "1.00x";
+    rouletteMultDisplay.className = "hilo-mult-header";
+    gsap.set(cylinderVisual, { rotation: 0 });
+    
+    // Nettoyer visuellement les explosions
+    document.querySelectorAll('.cylinder-chamber').forEach(c => c.classList.remove('fired'));
+    if (typeof gererMusiques === "function") gererMusiques(1.0);
+}
+
+rouletteStartBtn.addEventListener('click', () => {
+    let loadedCount = rouletteChambers.filter(c => c).length;
+    if (!rouletteBet || rouletteBet < 1) return animateBtnError('roulette-start-btn');
+    if (loadedCount === 0) return animateBtnError('roulette-start-btn');
+    
+    if(!keepTotalBalance) turnBalance = 0;
+    turnBalance -= rouletteBet; // On paye la mise
+    updateLiveSummary();
+    
+    rouletteObj.isPlaying = true;
+    document.getElementById('roulette-betting-area').classList.add('hidden');
+    rouletteMultDisplay.textContent = "SPINNING...";
+    
+    // On calcule la rotation pour que le hasard frappe
+    const targetChamberIndex = Math.floor(Math.random() * 6);
+    // Chaque chambre représente 60 degrés. Pour amener la target en haut (0°), on tourne de -target * 60
+    // On ajoute 6 tours complets (2160°) pour l'effet visuel du suspense
+    const targetRotation = 2160 - (targetChamberIndex * 60);
+    
+    gsap.to(cylinderVisual, {
+        rotation: targetRotation, 
+        duration: 4.5, 
+        ease: "power4.out",
+        onComplete: () => { finishRoulette(targetChamberIndex, loadedCount); }
+    });
+});
+
+function finishRoulette(landedIndex, loadedCount) {
+    document.getElementById('roulette-result-actions').classList.remove('hidden');
+    
+    if (rouletteChambers[landedIndex]) {
+        // PAN ! La chambre était chargée
+        document.getElementById(`chamber-${landedIndex}`).classList.add('fired');
+        rouletteMultDisplay.textContent = "BOUM ! 💥";
+        rouletteMultDisplay.classList.add('crashed');
+        gsap.to(cylinderVisual, { x: 15, duration: 0.1, yoyo: true, repeat: 5 });
+        
+        // Si c'est un suicide volontaire (6 balles)
+        if (loadedCount === 6) triggerMonkeyRain();
+        
+        if (typeof gererMusiques === "function") gererMusiques(1.0);
+    } else {
+        // Clic... Rien ne sort. Gagné !
+        turnBalance += Math.round(rouletteBet * rouletteObj.mult);
+        updateLiveSummary();
+        rouletteMultDisplay.textContent = rouletteObj.mult.toFixed(2) + "x";
+        rouletteMultDisplay.classList.add('cashed-out');
+        
+        // Petite musique de tension / victoire si gain énorme
+        if (typeof gererMusiques === "function") gererMusiques(rouletteObj.mult);
+    }
+}
