@@ -186,6 +186,7 @@ function updateLiveSummary() {
 }
 
 // Boutons de navigation
+// Boutons de navigation du menu principal
 document.querySelectorAll('.game-card').forEach(card => {
   card.addEventListener('click', () => {
     const game = card.dataset.game;
@@ -193,9 +194,11 @@ document.querySelectorAll('.game-card').forEach(card => {
     else if (game === 'plinko') { resetPlinkoUI(); showScreen('plinko'); }
     else if (game === 'mines') { resetMinesUI(); showScreen('mines'); }
     else if (game === 'hilo') { resetHiloUI(); showScreen('hilo'); }
+    else if (game === 'roulette') { resetRouletteUI(); showScreen('roulette'); } // <-- La ligne manquante
   });
 });
 
+// Boutons "Autre manche / Recharger" à la fin d'une partie
 document.querySelectorAll('.btn-play-again').forEach(btn => {
   btn.addEventListener('click', (e) => {
     const target = e.target.dataset.target;
@@ -203,11 +206,8 @@ document.querySelectorAll('.btn-play-again').forEach(btn => {
     else if(target === 'plinko') resetPlinkoUI();
     else if(target === 'mines') resetMinesUI();
     else if(target === 'hilo') resetHiloUI();
+    else if(target === 'roulette') resetRouletteUI(); // <-- La ligne manquante
   });
-});
-
-document.querySelectorAll('.btn-return-menu').forEach(btn => {
-  btn.addEventListener('click', () => showScreen('select'));
 });
 
 
