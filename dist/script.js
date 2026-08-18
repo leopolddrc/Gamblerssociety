@@ -1014,6 +1014,11 @@ let isDragging = false;
 let isSpinning = false;
 let awaitingSwipe = false;
 
+// Chargement des effets sonores
+const audioSpin = new Audio('spin.mp3');
+const audioBang = new Audio('bang.mp3');
+const audioClick = new Audio('click.mp3');
+
 const ROULETTE_MULTS = { 0: 1.0, 1: 1.25, 2: 1.60, 3: 2.20, 4: 3.50, 5: 7.00, 6: 0.00 };
 
 const rouletteStartBtn = document.getElementById('roulette-start-btn');
@@ -1140,6 +1145,10 @@ function executeSpin(delta) {
     swipeIndicator.classList.add('hidden');
     rouletteMultDisplay.textContent = "SPINNING...";
     
+    // On lance le son du barillet (le catch évite les erreurs si le navigateur bloque l'audio)
+    audioSpin.currentTime = 0;
+    audioSpin.play().catch(e => console.log("Audio bloqué"));
+    
     const landedIndex = Math.floor(Math.random() * 6);
     let loadedCount = rouletteChambers.filter(c => c).length;
     
@@ -1158,10 +1167,11 @@ function executeSpin(delta) {
     
     gsap.to(cylinder3d, {
         rotationX: targetRotation, 
-        duration: 4.0, 
+        duration: 3.0, 
         ease: "power4.out",
         onComplete: () => { 
             isSpinning = false;
+            audioSpin.pause(); // On coupe le son de rotation quand ça s'arrête
             finishRoulette(landedIndex, loadedCount); 
         }
     });
@@ -1171,13 +1181,14 @@ function finishRoulette(landedIndex, loadedCount) {
     document.getElementById('roulette-result-actions').classList.remove('hidden');
     
     if (rouletteChambers[landedIndex]) {
-        // PERDU : Animation de tir et gros recul
+        // PERDU : On lance le coup de feu
+        audioBang.currentTime = 0;
+        audioBang.play().catch(e => console.log("Audio bloqué"));
+
         rouletteMultDisplay.textContent = "BOUM ! 💥";
         rouletteMultDisplay.classList.add('crashed');
         
-        // Flash sortant du canon
         gsap.to('#muzzle-flash', { opacity: 1, duration: 0.05, yoyo: true, repeat: 1 });
-        // Recul ultra violent du pistolet (part vers la droite et pivote vers le haut)
         gsap.to('.gun-container', { x: 50, rotation: -15, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.out", 
             onComplete: () => {
                 gsap.to('.gun-container', { x: 0, rotation: 0, duration: 0.5, ease: "elastic.out(1, 0.5)" });
@@ -1187,7 +1198,10 @@ function finishRoulette(landedIndex, loadedCount) {
         if (loadedCount === 6) triggerMonkeyRain();
         if (typeof gererMusiques === "function") gererMusiques(1.0);
     } else {
-        // GAGNÉ : Pas de tir
+        // GAGNÉ : On lance le bruit de clic métallique
+        audioClick.currentTime = 0;
+        audioClick.play().catch(e => console.log("Audio bloqué"));
+
         turnBalance += Math.round(rouletteBet * rouletteObj.mult);
         updateLiveSummary();
         rouletteMultDisplay.textContent = rouletteObj.mult.toFixed(2) + "x";
