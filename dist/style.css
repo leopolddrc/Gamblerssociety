@@ -388,6 +388,8 @@ button:active { transform: scale(0.96); }
 /* Le contenu caché en dessous */
 .cloche-content {
     position: absolute; bottom: 5px; width: 60px; height: 60px; z-index: 1;
-    display: flex; justify-content: center; align-items: center; font-size: 3rem;
+    display: flex; justify-content: center; align-items: center; 
+    font-size: 2.2rem; /* Police plus petite (au lieu de 3rem) */
+    white-space: nowrap; /* Empêche les frites de passer sous le poulet */
 }
 .cloche-content img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); }

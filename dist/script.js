@@ -1256,7 +1256,7 @@ function buildCloches() {
     clochesData = [];
     winningIndex = Math.floor(Math.random() * pouletCount); // On choisit où est le Poulet Frites
     
-    const spacing = window.innerWidth < 600 ? 90 : 120;
+    const spacing = window.innerWidth < 768 ? 95 : 140;
     
     for (let i = 0; i < pouletCount; i++) {
         const startX = (i - (pouletCount - 1) / 2) * spacing;
