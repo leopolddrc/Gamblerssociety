@@ -1214,12 +1214,32 @@ function finishRoulette(landedIndex, loadedCount) {
 /* ==========================================================================
    JEU 6 : POULET BITE (Bonneteau - Moteur Physique Strict)
    ========================================================================== */
+let pouletBet = 0;
+let pouletCount = 3;
+let pouletSpeed = 1.4;
+let pouletMult = 1.24;
+let pouletIsPlaying = false;
+let isMixing = false; 
+let winningIndex = 0;
+
+let clochesData = [];
+let clocheSlots = []; 
+let slotPositions = []; 
+
+const pouletStartBtn = document.getElementById('poulet-start-btn');
+const pouletMultDisplay = document.getElementById('poulet-multiplier-display');
+const pouletTable = document.getElementById('poulet-table');
+const pouletCountSelect = document.getElementById('poulet-count-select');
+const pouletSpeedSelect = document.getElementById('poulet-speed-select');
+const pouletJumpscare = document.getElementById('poulet-jumpscare');
+
 document.querySelectorAll('.poulet-bet').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.poulet-bet').forEach(b => b.classList.remove('selected-hilo'));
     btn.classList.add('selected-hilo'); pouletBet = parseInt(btn.dataset.bet); document.getElementById('poulet-custom-bet').value = ''; 
   });
 });
+
 document.getElementById('poulet-custom-bet').addEventListener('input', (e) => {
   document.querySelectorAll('.poulet-bet').forEach(b => b.classList.remove('selected-hilo')); 
   pouletBet = parseInt(e.target.value) || 0;
@@ -1234,14 +1254,12 @@ function updatePouletOdds() {
     document.getElementById('poulet-speed-val').textContent = pouletSpeed.toFixed(1) + "x";
     
     // NOUVELLE FORMULE PLUS DURE (Multiplier rabaissé)
-    // Ex : 3 cloches à 1.4x = 1.24x gain
-    // Ex : 6 cloches à 4.0x (impossible) = 2.90x gain
     pouletMult = (pouletCount * 0.25) + (pouletSpeed * 0.35); 
     document.getElementById('poulet-odds-info').textContent = `Gain potentiel : ${pouletMult.toFixed(2)}x`;
 }
 
 pouletCountSelect.addEventListener('change', () => { updatePouletOdds(); buildCloches(); });
-pouletSpeedSelect.addEventListener('input', updatePouletOdds); // 'input' permet de voir le gain changer en direct quand on glisse
+pouletSpeedSelect.addEventListener('input', updatePouletOdds);
 
 function buildCloches() {
     pouletTable.innerHTML = '';
@@ -1253,14 +1271,13 @@ function buildCloches() {
     const spacing = window.innerWidth < 768 ? 90 : 120; 
     
     for (let i = 0; i < pouletCount; i++) {
-        // Définition de la grille mathématique stricte
         const startX = (i - (pouletCount - 1) / 2) * spacing;
-        slotPositions.push(startX); // On grave cette case dans le marbre
-        clocheSlots.push(i); // Au départ, la cloche i est dans la case i
+        slotPositions.push(startX); 
+        clocheSlots.push(i); 
         
         const wrapper = document.createElement('div');
         wrapper.className = 'cloche-wrapper cloche-lifted'; 
-        gsap.set(wrapper, { x: startX, y: 0 }); // On les pose sur leurs cases
+        gsap.set(wrapper, { x: startX, y: 0 }); 
         
         const content = (i === winningIndex) ? '🍗🍟' : '<img src="poulet-bite.png" alt="Perdu">';
         
@@ -1274,19 +1291,6 @@ function buildCloches() {
         wrapper.addEventListener('click', () => handleClocheClick(i));
     }
 }
-
-window.resetPouletUI = function() {
-    pouletIsPlaying = false;
-    isMixing = false;
-    document.getElementById('poulet-betting-area').classList.remove('hidden');
-    document.getElementById('poulet-result-actions').classList.add('hidden');
-    pouletJumpscare.classList.add('hidden');
-    pouletStartBtn.disabled = false;
-    pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
-    pouletMultDisplay.className = "hilo-mult-header";
-    updatePouletOdds();
-    buildCloches(); 
-};
 
 window.resetPouletUI = function() {
     pouletIsPlaying = false;
