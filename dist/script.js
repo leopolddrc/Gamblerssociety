@@ -1288,6 +1288,19 @@ window.resetPouletUI = function() {
     buildCloches(); 
 };
 
+window.resetPouletUI = function() {
+    pouletIsPlaying = false;
+    isMixing = false;
+    document.getElementById('poulet-betting-area').classList.remove('hidden');
+    document.getElementById('poulet-result-actions').classList.add('hidden');
+    pouletJumpscare.classList.add('hidden');
+    pouletStartBtn.disabled = false;
+    pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
+    pouletMultDisplay.className = "hilo-mult-header";
+    updatePouletOdds();
+    buildCloches(); 
+};
+
 const distractionTexts = [
     "Mamie a hâte de ce merveilleux repas",
     "Ouuh la bonne mayonnaise sur le poulet",
