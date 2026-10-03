@@ -55,6 +55,13 @@
           <p>Charge les bouteilles, tourne le barillet, et prie.</p>
         </div>
       </button>
+      <div class="game-card" data-game="poulet">
+  <div class="game-icon">🐔</div>
+  <div class="game-info">
+    <h3>Le Poulet Bite</h3>
+    <p>Trouve le Poulet Frites, évite le Poulet Bite.</p>
+  </div>
+</div>
     </div>
   </div>
 
@@ -413,4 +420,72 @@
 
   </body>
   
+  <!-- ==================================================================== -->
+  <!--                      JEU 6 : POULET BITE                             -->
+  <!-- ==================================================================== -->
+  <div id="poulet-screen" class="screen landscape-layout">
+    <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
+    <div class="left-panel">
+      
+      <div class="live-summary">
+        <div class="summary-header">
+          <h4>📊 Bilan</h4>
+          <div style="display:flex; gap:5px;">
+            <button class="toggle-total-btn active">Mode Total : ON</button>
+            <button class="reset-total-btn">🔄</button>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div id="poulet-balance-box" class="stat-box neutral-box">
+            <span id="poulet-balance-label" class="stat-label">Équilibre</span>
+            <span id="poulet-live-balance" class="stat-value">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="poulet-betting-area" class="panel-section">
+        <label>Mise (Gorgées) :</label>
+        <div class="quick-bets">
+          <button class="bet-btn poulet-bet" data-bet="1">1</button>
+          <button class="bet-btn poulet-bet" data-bet="3">3</button>
+          <button class="bet-btn poulet-bet" data-bet="5">5</button>
+          <input type="number" id="poulet-custom-bet" placeholder="Max 10" min="1" max="10" style="flex: 1; padding: 8px;"/>
+        </div>
+        
+        <label style="margin-top: 15px;">Nombre de cloches :</label>
+        <select id="poulet-count-select" style="margin-bottom: 15px;">
+            <option value="3">3 Cloches (Facile)</option>
+            <option value="4">4 Cloches (Moyen)</option>
+            <option value="5">5 Cloches (Difficile)</option>
+        </select>
+
+        <label>Vitesse du cuistot :</label>
+        <select id="poulet-speed-select" style="margin-bottom: 15px;">
+            <option value="1">Lente (x1.0)</option>
+            <option value="1.5">Rapide (x1.5)</option>
+            <option value="2.5">Éclair (x2.5)</option>
+        </select>
+        
+        <div class="roulette-odds-info" id="poulet-odds-info">Multiplicateur : 2.50x</div>
+        
+        <button id="poulet-start-btn" class="action-btn" style="background: #eab308; color: black; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);">MÉLANGER 🌪️</button>
+      </div>
+      
+      <div id="poulet-result-actions" class="hidden panel-section">
+        <button class="secondary-btn btn-play-again" data-target="poulet">🔄 Rejouer</button>
+        <button class="primary-btn btn-return-menu">✅ Quitter</button>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="game-view" style="background: radial-gradient(circle at center, #422006 0%, #170700 100%); display:flex; flex-direction:column; justify-content:center; align-items:center; overflow: hidden;">
+        <div id="poulet-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px; z-index: 10;">Prêt ?</div>
+        
+        <!-- Table de jeu -->
+        <div class="poulet-table" id="poulet-table">
+            <!-- Les cloches seront générées ici par JS -->
+        </div>
+      </div>
+    </div>
+  </div>
 </html>

@@ -70,7 +70,8 @@ const screens = {
   plinko: document.getElementById('plinko-screen'),
   mines: document.getElementById('mines-screen'),
   hilo: document.getElementById('hilo-screen'),
-  roulette: document.getElementById('roulette-screen')
+  roulette: document.getElementById('roulette-screen'),
+  poulet: document.getElementById('poulet-screen')
 };
 
 // ==========================================================================
@@ -172,7 +173,7 @@ function updateLiveSummary() {
     boxClass = "danger-box";
   }
 
-  ['crash', 'plinko', 'mines', 'hilo', 'roulette'].forEach(game => {
+  ['crash', 'plinko', 'mines', 'hilo', 'roulette', 'poulet'].forEach(game => {
     const box = document.getElementById(`${game}-balance-box`);
     if(box) {
       box.className = `stat-box ${boxClass}`;
@@ -194,7 +195,8 @@ document.querySelectorAll('.game-card').forEach(card => {
     else if (game === 'plinko') { resetPlinkoUI(); showScreen('plinko'); }
     else if (game === 'mines') { resetMinesUI(); showScreen('mines'); }
     else if (game === 'hilo') { resetHiloUI(); showScreen('hilo'); }
-    else if (game === 'roulette') { resetRouletteUI(); showScreen('roulette'); } // <-- La ligne manquante
+    else if (game === 'roulette') { resetRouletteUI(); showScreen('roulette'); }
+    else if (game === 'poulet') { resetPouletUI(); showScreen('poulet'); } // <-- La ligne manquante
   });
 });
 
@@ -1208,4 +1210,163 @@ function finishRoulette(landedIndex, loadedCount) {
         rouletteMultDisplay.classList.add('cashed-out');
         if (typeof gererMusiques === "function") gererMusiques(rouletteObj.mult);
     }
+}
+/* ==========================================================================
+   JEU 6 : POULET BITE (Bonneteau)
+   ========================================================================== */
+let pouletBet = 0;
+let pouletCount = 3;
+let pouletSpeed = 1;
+let pouletMult = 2.50;
+let pouletIsPlaying = false;
+let winningIndex = 0;
+let clochesData = [];
+
+const pouletStartBtn = document.getElementById('poulet-start-btn');
+const pouletMultDisplay = document.getElementById('poulet-multiplier-display');
+const pouletTable = document.getElementById('poulet-table');
+const pouletCountSelect = document.getElementById('poulet-count-select');
+const pouletSpeedSelect = document.getElementById('poulet-speed-select');
+
+document.querySelectorAll('.poulet-bet').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.poulet-bet').forEach(b => b.classList.remove('selected-hilo'));
+    btn.classList.add('selected-hilo'); pouletBet = parseInt(btn.dataset.bet); document.getElementById('poulet-custom-bet').value = ''; 
+  });
+});
+document.getElementById('poulet-custom-bet').addEventListener('input', (e) => {
+  document.querySelectorAll('.poulet-bet').forEach(b => b.classList.remove('selected-hilo')); 
+  pouletBet = parseInt(e.target.value) || 0;
+  if(pouletBet > 10) { pouletBet = 10; e.target.value = 10; }
+});
+
+function updatePouletOdds() {
+    pouletCount = parseInt(pouletCountSelect.value);
+    pouletSpeed = parseFloat(pouletSpeedSelect.value);
+    // Calcul du gain : (Nb Cloches - 1) * Vitesse. Ex: 5 cloches éclair = 4 * 2.5 = x10 !
+    pouletMult = (pouletCount - 1) * pouletSpeed * 1.25; 
+    document.getElementById('poulet-odds-info').textContent = `Gain potentiel : ${pouletMult.toFixed(2)}x`;
+}
+
+pouletCountSelect.addEventListener('change', () => { updatePouletOdds(); buildCloches(); });
+pouletSpeedSelect.addEventListener('change', updatePouletOdds);
+
+function buildCloches() {
+    pouletTable.innerHTML = '';
+    clochesData = [];
+    winningIndex = Math.floor(Math.random() * pouletCount); // On choisit où est le Poulet Frites
+    
+    const spacing = window.innerWidth < 600 ? 90 : 120;
+    
+    for (let i = 0; i < pouletCount; i++) {
+        const startX = (i - (pouletCount - 1) / 2) * spacing;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cloche-wrapper cloche-lifted'; // Soulevé par défaut
+        gsap.set(wrapper, { x: startX, y: 0 });
+        
+        // C'est ici qu'on charge ton image pour le perdant, et un emoji/image pour le gagnant !
+        const content = (i === winningIndex) ? '🍗🍟' : '<img src="poulet-bite.png" alt="Poulet Bite">';
+        
+        wrapper.innerHTML = `
+            <div class="cloche-content">${content}</div>
+            <div class="cloche-dome"></div>
+        `;
+        
+        pouletTable.appendChild(wrapper);
+        clochesData.push({ element: wrapper, currentPos: startX });
+        
+        wrapper.addEventListener('click', () => handleClocheClick(i));
+    }
+}
+
+function resetPouletUI() {
+    pouletIsPlaying = false;
+    document.getElementById('poulet-betting-area').classList.remove('hidden');
+    document.getElementById('poulet-result-actions').classList.add('hidden');
+    pouletStartBtn.disabled = false;
+    pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
+    pouletMultDisplay.className = "hilo-mult-header";
+    updatePouletOdds();
+    buildCloches(); // Reconstruit la table
+}
+
+pouletStartBtn.addEventListener('click', async () => {
+    if (!pouletBet || pouletBet < 1) return animateBtnError('poulet-start-btn');
+    
+    if(!keepTotalBalance) turnBalance = 0;
+    turnBalance -= pouletBet; updateLiveSummary();
+    
+    pouletIsPlaying = true;
+    document.getElementById('poulet-betting-area').classList.add('hidden');
+    pouletMultDisplay.textContent = "MÉLANGE...";
+    
+    // 1. On baisse toutes les cloches
+    document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.remove('cloche-lifted'));
+    
+    // Petite pause de suspense avant le mélange
+    await new Promise(r => setTimeout(r, 800));
+    
+    // 2. Le mélange GSAP
+    const totalSwaps = 6 + (pouletCount * 2); // Plus il y a de cloches, plus on mélange
+    const animDuration = 0.6 / pouletSpeed; // Vitesse influencée par le paramètre
+    
+    for (let s = 0; s < totalSwaps; s++) {
+        // Choisit deux cloches au hasard à inverser
+        let idx1 = Math.floor(Math.random() * pouletCount);
+        let idx2 = Math.floor(Math.random() * pouletCount);
+        while (idx1 === idx2) idx2 = Math.floor(Math.random() * pouletCount); // S'assure qu'elles sont différentes
+        
+        let c1 = clochesData[idx1];
+        let c2 = clochesData[idx2];
+        let pos1 = c1.currentPos;
+        let pos2 = c2.currentPos;
+        
+        // Animation : Une passe devant (y:-20), l'autre derrière (y:20)
+        gsap.to(c1.element, { x: pos2, y: -20, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1 });
+        gsap.to(c2.element, { x: pos1, y: 20, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1 });
+        
+        // Mise à jour de leurs coordonnées
+        c1.currentPos = pos2;
+        c2.currentPos = pos1;
+        
+        await new Promise(r => setTimeout(r, animDuration * 1000));
+    }
+    
+    // Fin du mélange, on active le clic
+    pouletMultDisplay.textContent = "OÙ EST LE POULET FRITES ?";
+    document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.add('cloche-interactive'));
+});
+
+function handleClocheClick(clickedIndex) {
+    if (!pouletIsPlaying) return; // Ignore si pas en jeu
+    
+    // On bloque les autres cloches
+    const wrappers = document.querySelectorAll('.cloche-wrapper');
+    wrappers.forEach(c => c.classList.remove('cloche-interactive'));
+    
+    // On soulève la cloche cliquée
+    wrappers[clickedIndex].classList.add('cloche-lifted');
+    
+    if (clickedIndex === winningIndex) {
+        // GAGNÉ
+        turnBalance += Math.round(pouletBet * pouletMult);
+        updateLiveSummary();
+        pouletMultDisplay.textContent = "GAGNÉ ! " + pouletMult.toFixed(2) + "x";
+        pouletMultDisplay.classList.add('cashed-out');
+        if (typeof gererMusiques === "function") gererMusiques(pouletMult);
+    } else {
+        // PERDU : C'est le Poulet Bite
+        pouletMultDisplay.textContent = "POULET BITE ! 🍆";
+        pouletMultDisplay.classList.add('crashed');
+        gsap.to(wrappers[clickedIndex], { x: "+=10", duration: 0.05, yoyo: true, repeat: 7 }); // Tremblement de terreur
+        if (typeof gererMusiques === "function") gererMusiques(1.0);
+    }
+    
+    // Soulève les autres cloches 1 seconde plus tard pour montrer la solution
+    setTimeout(() => {
+        wrappers.forEach(c => c.classList.add('cloche-lifted'));
+        document.getElementById('poulet-result-actions').classList.remove('hidden');
+        pouletIsPlaying = false;
+    }, 1500);
 }
