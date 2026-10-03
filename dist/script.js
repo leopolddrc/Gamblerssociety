@@ -1212,15 +1212,19 @@ function finishRoulette(landedIndex, loadedCount) {
     }
 }
 /* ==========================================================================
-   JEU 6 : POULET BITE (Bonneteau)
+   JEU 6 : POULET BITE (Bonneteau - Moteur Physique Strict)
    ========================================================================== */
 let pouletBet = 0;
 let pouletCount = 3;
 let pouletSpeed = 1;
 let pouletMult = 1.50;
 let pouletIsPlaying = false;
+let isMixing = false; // LE VERROU ANTI-SPAM
 let winningIndex = 0;
+
 let clochesData = [];
+let clocheSlots = []; // Mémoire de "Qui est dans quelle case"
+let slotPositions = []; // Les coordonnées exactes des cases fixes
 
 const pouletStartBtn = document.getElementById('poulet-start-btn');
 const pouletMultDisplay = document.getElementById('poulet-multiplier-display');
@@ -1244,8 +1248,6 @@ document.getElementById('poulet-custom-bet').addEventListener('input', (e) => {
 function updatePouletOdds() {
     pouletCount = parseInt(pouletCountSelect.value);
     pouletSpeed = parseFloat(pouletSpeedSelect.value);
-    
-    // Nouvelle formule plus équilibrée : Base = 0.5 par cloche * Vitesse
     pouletMult = (pouletCount * 0.5) * pouletSpeed; 
     document.getElementById('poulet-odds-info').textContent = `Gain potentiel : ${pouletMult.toFixed(2)}x`;
 }
@@ -1256,17 +1258,21 @@ pouletSpeedSelect.addEventListener('change', updatePouletOdds);
 function buildCloches() {
     pouletTable.innerHTML = '';
     clochesData = [];
+    clocheSlots = [];
+    slotPositions = [];
     winningIndex = Math.floor(Math.random() * pouletCount); 
     
-    // Espacement sécurisé pour ne pas se toucher au repos
     const spacing = window.innerWidth < 768 ? 90 : 120; 
     
     for (let i = 0; i < pouletCount; i++) {
+        // Définition de la grille mathématique stricte
         const startX = (i - (pouletCount - 1) / 2) * spacing;
+        slotPositions.push(startX); // On grave cette case dans le marbre
+        clocheSlots.push(i); // Au départ, la cloche i est dans la case i
         
         const wrapper = document.createElement('div');
         wrapper.className = 'cloche-wrapper cloche-lifted'; 
-        gsap.set(wrapper, { x: startX, y: 0 });
+        gsap.set(wrapper, { x: startX, y: 0 }); // On les pose sur leurs cases
         
         const content = (i === winningIndex) ? '🍗🍟' : '<img src="poulet-bite.png" alt="Perdu">';
         
@@ -1276,18 +1282,33 @@ function buildCloches() {
         `;
         
         pouletTable.appendChild(wrapper);
-        clochesData.push({ element: wrapper, currentPos: startX });
+        clochesData.push({ element: wrapper });
         wrapper.addEventListener('click', () => handleClocheClick(i));
     }
 }
 
+window.resetPouletUI = function() {
+    pouletIsPlaying = false;
+    isMixing = false;
+    document.getElementById('poulet-betting-area').classList.remove('hidden');
+    document.getElementById('poulet-result-actions').classList.add('hidden');
+    pouletJumpscare.classList.add('hidden');
+    pouletStartBtn.disabled = false;
+    pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
+    pouletMultDisplay.className = "hilo-mult-header";
+    updatePouletOdds();
+    buildCloches(); 
+};
+
 pouletStartBtn.addEventListener('click', async () => {
     if (!pouletBet || pouletBet < 1) return animateBtnError('poulet-start-btn');
+    if (isMixing || pouletIsPlaying) return; // BLOQUE LES MULTIPLES CLICS
     
     if(!keepTotalBalance) turnBalance = 0;
     turnBalance -= pouletBet; updateLiveSummary();
     
     pouletIsPlaying = true;
+    isMixing = true;
     document.getElementById('poulet-betting-area').classList.add('hidden');
     pouletMultDisplay.textContent = "MÉLANGE...";
     pouletJumpscare.classList.add('hidden');
@@ -1296,42 +1317,49 @@ pouletStartBtn.addEventListener('click', async () => {
     await new Promise(r => setTimeout(r, 800));
     
     const totalSwaps = 5 + (pouletCount * 2); 
-    
-    // CORRECTION MAJEURE : On sépare les temps
-    const halfAnim = 0.35 / pouletSpeed; // Temps pour monter en l'air
-    const fullAnim = halfAnim * 2;       // Temps total pour aller de gauche à droite
+    const halfAnim = 0.35 / pouletSpeed; 
+    const fullAnim = halfAnim * 2; 
     
     for (let s = 0; s < totalSwaps; s++) {
-        let idx1 = Math.floor(Math.random() * pouletCount);
-        let idx2 = Math.floor(Math.random() * pouletCount);
-        while (idx1 === idx2) idx2 = Math.floor(Math.random() * pouletCount); 
+        // 1. On choisit 2 CASES (Slots) au hasard
+        let slot1 = Math.floor(Math.random() * pouletCount);
+        let slot2 = Math.floor(Math.random() * pouletCount);
+        while (slot1 === slot2) slot2 = Math.floor(Math.random() * pouletCount); 
         
-        let c1 = clochesData[idx1];
-        let c2 = clochesData[idx2];
-        let pos1 = c1.currentPos;
-        let pos2 = c2.currentPos;
+        // 2. On regarde qui est dans ces cases
+        let cloche1Index = clocheSlots.indexOf(slot1);
+        let cloche2Index = clocheSlots.indexOf(slot2);
         
-        // 1. Le X va à sa nouvelle position (SANS EFFET YOYO !)
-        gsap.to(c1.element, { x: pos2, duration: fullAnim, ease: "power1.inOut" });
-        gsap.to(c2.element, { x: pos1, duration: fullAnim, ease: "power1.inOut" });
+        let c1 = clochesData[cloche1Index];
+        let c2 = clochesData[cloche2Index];
         
-        // 2. Le Y monte et redescend en arc de cercle (AVEC EFFET YOYO)
-        gsap.to(c1.element, { y: -70, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
-        gsap.to(c2.element, { y: 70, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        // 3. Les nouvelles coordonnées X sont tirées de notre grille stricte
+        let targetX1 = slotPositions[slot2];
+        let targetX2 = slotPositions[slot1];
         
-        c1.currentPos = pos2;
-        c2.currentPos = pos1;
+        // On bouge le X (Glissade propre)
+        gsap.to(c1.element, { x: targetX1, duration: fullAnim, ease: "power1.inOut" });
+        gsap.to(c2.element, { x: targetX2, duration: fullAnim, ease: "power1.inOut" });
         
-        // 3. On attend exactement la fin de l'animation avant de lancer la suivante
-        await new Promise(r => setTimeout(r, fullAnim * 1000 + 50));
+        // On bouge le Y (Très large évitement par le haut et le bas)
+        gsap.to(c1.element, { y: -100, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        gsap.to(c2.element, { y: 100, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        
+        // 4. On met à jour l'inventaire des cases
+        clocheSlots[cloche1Index] = slot2;
+        clocheSlots[cloche2Index] = slot1;
+        
+        // On bloque le code jusqu'à la fin millimétrée de l'animation
+        await new Promise(r => setTimeout(r, fullAnim * 1000 + 20));
     }
     
+    isMixing = false;
     pouletMultDisplay.textContent = "OÙ EST LE POULET ?";
     document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.add('cloche-interactive'));
 });
 
 function handleClocheClick(clickedIndex) {
-    if (!pouletIsPlaying) return; 
+    if (!pouletIsPlaying || isMixing) return; 
     
     const wrappers = document.querySelectorAll('.cloche-wrapper');
     wrappers.forEach(c => c.classList.remove('cloche-interactive'));
@@ -1348,7 +1376,6 @@ function handleClocheClick(clickedIndex) {
         pouletMultDisplay.classList.add('crashed');
         gsap.to(wrappers[clickedIndex], { x: "+=10", duration: 0.05, yoyo: true, repeat: 7 }); 
         
-        // Apparition de l'image géante
         pouletJumpscare.classList.remove('hidden');
         if (typeof gererMusiques === "function") gererMusiques(1.0);
     }
