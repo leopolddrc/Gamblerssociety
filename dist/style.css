@@ -405,3 +405,11 @@ button:active { transform: scale(0.96); }
     70% { transform: scale(1.1); opacity: 1; } 
     100% { transform: scale(1); } 
 }
+
+.distraction-anim { animation: flashText 1.5s ease-in-out forwards; }
+@keyframes flashText {
+    0% { transform: scale(0.5); opacity: 0; }
+    15% { transform: scale(1.1) rotate(-2deg); opacity: 1; }
+    85% { transform: scale(1) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+}

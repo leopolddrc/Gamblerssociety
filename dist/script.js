@@ -1300,9 +1300,17 @@ window.resetPouletUI = function() {
     buildCloches(); 
 };
 
+const distractionTexts = [
+    "Mamie a hâte de ce merveilleux repas",
+    "Ouuh la bonne mayonnaise sur le poulet",
+    "J'ai faim pas vous ?",
+    "Le crame pas hein"
+];
+const pouletDistraction = document.getElementById('poulet-distraction');
+
 pouletStartBtn.addEventListener('click', async () => {
     if (!pouletBet || pouletBet < 1) return animateBtnError('poulet-start-btn');
-    if (isMixing || pouletIsPlaying) return; // BLOQUE LES MULTIPLES CLICS
+    if (isMixing || pouletIsPlaying) return; 
     
     if(!keepTotalBalance) turnBalance = 0;
     turnBalance -= pouletBet; updateLiveSummary();
@@ -1316,40 +1324,75 @@ pouletStartBtn.addEventListener('click', async () => {
     document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.remove('cloche-lifted'));
     await new Promise(r => setTimeout(r, 800));
     
-    const totalSwaps = 5 + (pouletCount * 2); 
-    const halfAnim = 0.35 / pouletSpeed; 
-    const fullAnim = halfAnim * 2; 
+    // On augmente le nombre de tours pour avoir le temps de voir les feintes
+    const totalSwaps = 8 + (pouletCount * 2); 
     
     for (let s = 0; s < totalSwaps; s++) {
-        // 1. On choisit 2 CASES (Slots) au hasard
+        // 1. RYTHME CHAOTIQUE : Lent au début/fin, frénétique au milieu
+        let progress = s / totalSwaps;
+        let speedMod = (progress > 0.2 && progress < 0.8) ? (Math.random() * 0.4 + 0.5) : (Math.random() * 0.5 + 1.2);
+        let halfAnim = (0.35 / pouletSpeed) * speedMod; 
+        let fullAnim = halfAnim * 2; 
+
+        // 2. TEXTE PERTURBATEUR (15% de chance d'apparaître)
+        if (Math.random() < 0.15 && progress > 0.1) {
+            pouletDistraction.textContent = distractionTexts[Math.floor(Math.random() * distractionTexts.length)];
+            pouletDistraction.classList.remove('hidden', 'distraction-anim');
+            void pouletDistraction.offsetWidth; // Force l'animation à recommencer
+            pouletDistraction.classList.add('distraction-anim');
+        }
+
+        // 3. TIRAGE DES MÉCANIQUES (Feinte ou Double Croisement)
+        let isFakeMove = Math.random() < 0.25; // 25% de chances de faire une feinte
+        let isDoubleSwap = (pouletCount >= 4 && !isFakeMove && Math.random() < 0.4); // 40% de double croisement si >= 4 cloches
+        
         let slot1 = Math.floor(Math.random() * pouletCount);
         let slot2 = Math.floor(Math.random() * pouletCount);
         while (slot1 === slot2) slot2 = Math.floor(Math.random() * pouletCount); 
         
-        // 2. On regarde qui est dans ces cases
-        let cloche1Index = clocheSlots.indexOf(slot1);
-        let cloche2Index = clocheSlots.indexOf(slot2);
+        let swapPairs = [{ s1: slot1, s2: slot2 }];
+
+        // Si double croisement, on choisit deux autres cases libres
+        if (isDoubleSwap) {
+            let availableSlots = [];
+            for (let i = 0; i < pouletCount; i++) { if (i !== slot1 && i !== slot2) availableSlots.push(i); }
+            availableSlots.sort(() => 0.5 - Math.random()); // Mélange
+            if (availableSlots.length >= 2) {
+                swapPairs.push({ s1: availableSlots[0], s2: availableSlots[1] });
+            }
+        }
         
-        let c1 = clochesData[cloche1Index];
-        let c2 = clochesData[cloche2Index];
+        // 4. EXÉCUTION DES MOUVEMENTS
+        swapPairs.forEach(pair => {
+            let c1Idx = clocheSlots.indexOf(pair.s1);
+            let c2Idx = clocheSlots.indexOf(pair.s2);
+            let c1 = clochesData[c1Idx];
+            let c2 = clochesData[c2Idx];
+
+            if (isFakeMove) {
+                // LA FEINTE : Elles vont à mi-chemin puis font demi-tour (Effet Yoyo sur X et Y)
+                let midX = (slotPositions[pair.s1] + slotPositions[pair.s2]) / 2;
+                gsap.to(c1.element, { x: midX, duration: halfAnim, yoyo: true, repeat: 1, ease: "sine.inOut" });
+                gsap.to(c2.element, { x: midX, duration: halfAnim, yoyo: true, repeat: 1, ease: "sine.inOut" });
+                gsap.to(c1.element, { y: -60, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.out" });
+                gsap.to(c2.element, { y: 60, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.out" });
+                // Note : clocheSlots n'est PAS mis à jour car elles reviennent à leur place.
+            } else {
+                // LE VRAI CROISEMENT (Strict)
+                let targetX1 = slotPositions[pair.s2];
+                let targetX2 = slotPositions[pair.s1];
+                
+                gsap.to(c1.element, { x: targetX1, duration: fullAnim, ease: "power1.inOut" });
+                gsap.to(c2.element, { x: targetX2, duration: fullAnim, ease: "power1.inOut" });
+                gsap.to(c1.element, { y: -100, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
+                gsap.to(c2.element, { y: 100, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
+                
+                clocheSlots[c1Idx] = pair.s2;
+                clocheSlots[c2Idx] = pair.s1;
+            }
+        });
         
-        // 3. Les nouvelles coordonnées X sont tirées de notre grille stricte
-        let targetX1 = slotPositions[slot2];
-        let targetX2 = slotPositions[slot1];
-        
-        // On bouge le X (Glissade propre)
-        gsap.to(c1.element, { x: targetX1, duration: fullAnim, ease: "power1.inOut" });
-        gsap.to(c2.element, { x: targetX2, duration: fullAnim, ease: "power1.inOut" });
-        
-        // On bouge le Y (Très large évitement par le haut et le bas)
-        gsap.to(c1.element, { y: -100, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
-        gsap.to(c2.element, { y: 100, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
-        
-        // 4. On met à jour l'inventaire des cases
-        clocheSlots[cloche1Index] = slot2;
-        clocheSlots[cloche2Index] = slot1;
-        
-        // On bloque le code jusqu'à la fin millimétrée de l'animation
+        // Pause exacte avant le prochain mouvement
         await new Promise(r => setTimeout(r, fullAnim * 1000 + 20));
     }
     
