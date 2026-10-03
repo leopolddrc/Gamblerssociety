@@ -212,6 +212,31 @@ document.querySelectorAll('.btn-play-again').forEach(btn => {
   });
 });
 
+/* =========================================================
+   MODE FOCUS UNIVERSEL (PLEIN ÉCRAN)
+   ========================================================= */
+// 1. Ajoute automatiquement le HUD sur TOUS les jeux
+document.querySelectorAll('.game-view').forEach(view => {
+    if (!view.querySelector('.mini-hud-gorgees')) {
+        view.insertAdjacentHTML('afterbegin', '<div class="mini-hud-gorgees">🍺 <span class="hud-val">0</span> Gorgées</div>');
+    }
+});
+
+// 2. La fonction pour allumer/éteindre le mode
+window.toggleGameFocus = function(screenId, isPlaying) {
+    const screen = document.getElementById(screenId);
+    if (!screen) return;
+    
+    if (isPlaying) {
+        screen.classList.add('playing-mode');
+        // Récupère les gorgées du jeu actuel
+        const statValue = screen.querySelector('.stat-value');
+        const hudVal = screen.querySelector('.hud-val');
+        if (statValue && hudVal) hudVal.textContent = statValue.textContent;
+    } else {
+        screen.classList.remove('playing-mode');
+    }
+};
 
 /* ==========================================================================
    JEU 1 : LE CRASH
@@ -280,6 +305,7 @@ function startCrashRound() {
   };
 
   document.getElementById('crash-betting-area').classList.add('hidden');
+  toggleGameFocus('crash-screen', true);
   btn_stop.classList.remove('hidden'); btn_stop.classList.add('locked'); btn_stop.disabled = true; btn_stop.textContent = "🔒 1.30x mini";
   gsap.set(rocket, { left: 0, top: crashCanvas.height, rotation: 45, opacity: 1 });
   crashLastTime = performance.now(); crashObj.animFrameId = requestAnimationFrame(crashLoop);
@@ -352,7 +378,8 @@ function triggerCrash() {
   
   gsap.to(rocket, { duration: 0.1, x: "+=15", rotation: "+=20", repeat: 3, yoyo: true });
   gsap.to(rocket, { delay: 0.4, duration: 0.5, scale: 2, opacity: 0, ease: "back.in" });
-  btn_stop.classList.add('hidden'); document.getElementById('crash-result-actions').classList.remove('hidden'); disp_mult.classList.remove('ghost'); 
+  btn_stop.classList.add('hidden'); document.getElementById('crash-result-actions').classList.remove('hidden'); disp_mult.classList.remove('ghost');
+  toggleGameFocus('crash-screen', false); 
   disp_mult.textContent = crashObj.crashPoint.toFixed(2) + "x"; disp_mult.classList.add('crashed');
   if (typeof gererMusiques === "function") gererMusiques(1.0);
 }
@@ -637,6 +664,8 @@ function startMinesRound() {
   minesMultDisplay.textContent = "1.00x";
   minesMultDisplay.className = "";
   
+  document.getElementById('mines-betting-area').classList.add('hidden');
+  toggleGameFocus('mines-screen', true);
   minesStartBtn.classList.add('hidden');
   minesCashoutBtn.classList.remove('hidden');
   minesCashoutBtn.textContent = `Encaisser`;
@@ -683,6 +712,7 @@ function endMinesGame(wonByClearing) {
   minesObj.isPlaying = false;
   minesCashoutBtn.classList.add('hidden');
   document.getElementById('mines-result-actions').classList.remove('hidden');
+  toggleGameFocus('mines-screen', false);
   
   Array.from(minesGrid.children).forEach((cell, i) => {
       if(!cell.classList.contains('revealed')) {
@@ -808,6 +838,8 @@ hiloStartBtn.addEventListener('click', () => {
   hiloObj.successCount = 0;
   hiloObj.isPlaying = true;
   
+  document.getElementById('hilo-betting-area').classList.add('hidden');
+  toggleGameFocus('hilo-screen', true);
   hiloStartBtn.classList.add('hidden');
   hiloCashoutBtn.classList.remove('hidden');
   
@@ -968,6 +1000,7 @@ function endHiloGame(won, byDeath = false) {
   hiloObj.isPlaying = false;
   hiloCashoutBtn.classList.add('hidden');
   document.getElementById('hilo-result-actions').classList.remove('hidden');
+  toggleGameFocus('hilo-screen', false);
   hiloBtnHigher.disabled = true;
   hiloBtnLower.disabled = true;
 
@@ -1056,6 +1089,7 @@ function resetRouletteUI() {
     isSpinning = false;
     document.getElementById('roulette-betting-area').classList.remove('hidden');
     document.getElementById('roulette-result-actions').classList.add('hidden');
+    toggleGameFocus('roulette-screen', false);
     
     // Réinitialisation de l'interface
     swipeIndicator.classList.add('hidden');
@@ -1097,6 +1131,7 @@ rouletteStartBtn.addEventListener('click', () => {
     awaitingSwipe = true; 
     
     document.getElementById('roulette-betting-area').classList.add('hidden');
+    toggleGameFocus('roulette-screen', true); // ✅ AJOUT ICI
     flatLoader.classList.add('hidden'); // Le chargeur plat disparaît !
     rouletteMultDisplay.textContent = "TIRE !";
     swipeIndicator.classList.remove('hidden'); 
@@ -1181,6 +1216,7 @@ function executeSpin(delta) {
 
 function finishRoulette(landedIndex, loadedCount) {
     document.getElementById('roulette-result-actions').classList.remove('hidden');
+    toggleGameFocus('roulette-screen', false); // ✅ AJOUT ICI
     
     if (rouletteChambers[landedIndex]) {
         // PERDU : On lance le coup de feu
@@ -1297,6 +1333,7 @@ window.resetPouletUI = function() {
     isMixing = false;
     document.getElementById('poulet-betting-area').classList.remove('hidden');
     document.getElementById('poulet-result-actions').classList.add('hidden');
+    toggleGameFocus('poulet-screen', false);
     pouletJumpscare.classList.add('hidden');
     pouletStartBtn.disabled = false;
     pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
@@ -1334,6 +1371,7 @@ pouletStartBtn.addEventListener('click', async () => {
     pouletIsPlaying = true;
     isMixing = true;
     document.getElementById('poulet-betting-area').classList.add('hidden');
+    toggleGameFocus('poulet-screen', true);
     pouletMultDisplay.textContent = "MÉLANGE...";
     pouletJumpscare.classList.add('hidden');
     
@@ -1442,6 +1480,7 @@ function handleClocheClick(clickedIndex) {
     setTimeout(() => {
         wrappers.forEach(c => c.classList.add('cloche-lifted'));
         document.getElementById('poulet-result-actions').classList.remove('hidden');
+        toggleGameFocus('poulet-screen', false);
         pouletIsPlaying = false;
     }, 1200);
 }
