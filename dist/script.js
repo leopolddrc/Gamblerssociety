@@ -1214,25 +1214,6 @@ function finishRoulette(landedIndex, loadedCount) {
 /* ==========================================================================
    JEU 6 : POULET BITE (Bonneteau - Moteur Physique Strict)
    ========================================================================== */
-let pouletBet = 0;
-let pouletCount = 3;
-let pouletSpeed = 1;
-let pouletMult = 1.50;
-let pouletIsPlaying = false;
-let isMixing = false; // LE VERROU ANTI-SPAM
-let winningIndex = 0;
-
-let clochesData = [];
-let clocheSlots = []; // Mémoire de "Qui est dans quelle case"
-let slotPositions = []; // Les coordonnées exactes des cases fixes
-
-const pouletStartBtn = document.getElementById('poulet-start-btn');
-const pouletMultDisplay = document.getElementById('poulet-multiplier-display');
-const pouletTable = document.getElementById('poulet-table');
-const pouletCountSelect = document.getElementById('poulet-count-select');
-const pouletSpeedSelect = document.getElementById('poulet-speed-select');
-const pouletJumpscare = document.getElementById('poulet-jumpscare');
-
 document.querySelectorAll('.poulet-bet').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.poulet-bet').forEach(b => b.classList.remove('selected-hilo'));
@@ -1248,12 +1229,19 @@ document.getElementById('poulet-custom-bet').addEventListener('input', (e) => {
 function updatePouletOdds() {
     pouletCount = parseInt(pouletCountSelect.value);
     pouletSpeed = parseFloat(pouletSpeedSelect.value);
-    pouletMult = (pouletCount * 0.5) * pouletSpeed; 
+    
+    // Mise à jour de l'affichage du texte du slider
+    document.getElementById('poulet-speed-val').textContent = pouletSpeed.toFixed(1) + "x";
+    
+    // NOUVELLE FORMULE PLUS DURE (Multiplier rabaissé)
+    // Ex : 3 cloches à 1.4x = 1.24x gain
+    // Ex : 6 cloches à 4.0x (impossible) = 2.90x gain
+    pouletMult = (pouletCount * 0.25) + (pouletSpeed * 0.35); 
     document.getElementById('poulet-odds-info').textContent = `Gain potentiel : ${pouletMult.toFixed(2)}x`;
 }
 
 pouletCountSelect.addEventListener('change', () => { updatePouletOdds(); buildCloches(); });
-pouletSpeedSelect.addEventListener('change', updatePouletOdds);
+pouletSpeedSelect.addEventListener('input', updatePouletOdds); // 'input' permet de voir le gain changer en direct quand on glisse
 
 function buildCloches() {
     pouletTable.innerHTML = '';
@@ -1304,7 +1292,18 @@ const distractionTexts = [
     "Mamie a hâte de ce merveilleux repas",
     "Ouuh la bonne mayonnaise sur le poulet",
     "J'ai faim pas vous ?",
-    "Le crame pas hein"
+    "Le crame pas hein",
+    "Pense à bien mastiquer !",
+    "Tu prendras bien un peu de rab ?",
+    "Attention c'est très chaud !",
+    "Le blanc est un peu sec aujourd'hui...",
+    "On mange à quelle heure ?",
+    "Garde une petite place pour le fromage",
+    "C'est qui qui coupe la volaille ?",
+    "Oh le beau croupion !",
+    "Tu veux l'aile ou la cuisse ?",
+    "Ne joue pas avec la nourriture !",
+    "Un petit coup de rouge avec ça ?"
 ];
 const pouletDistraction = document.getElementById('poulet-distraction');
 
