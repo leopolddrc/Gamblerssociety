@@ -387,14 +387,15 @@ button:active { transform: scale(0.96); }
 
 /* Le contenu caché en dessous */
 .cloche-content {
-    position: absolute; bottom: 5px; width: 60px; height: 60px; z-index: 1;
+    position: absolute; bottom: 5px; width: 75px; height: 60px; z-index: 1;
     display: flex; justify-content: center; align-items: center; 
-    font-size: 2rem; /* Taille de la police pour les emojis forcée */
+    font-size: 1.5rem; /* Police plus petite pour faire rentrer les deux émojis */
     line-height: 1;
+    white-space: nowrap;
 }
 .cloche-content img { 
-    width: 45px; /* Verrouille la taille de l'image poulet-bite.png sous la cloche */
-    height: 45px; 
+    width: 40px; /* Réduit à 40px (au lieu de 45) pour être sûr que ça ne bave pas */
+    height: 40px; 
     object-fit: contain; 
     filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); 
 }

@@ -1258,7 +1258,7 @@ function buildCloches() {
     clochesData = [];
     winningIndex = Math.floor(Math.random() * pouletCount); 
     
-    const spacing = window.innerWidth < 768 ? 70 : 100; // Plus compact pour que 6 cloches rentrent
+    const spacing = window.innerWidth < 768 ? 90 : 120; // Plus compact pour que 6 cloches rentrent
     
     for (let i = 0; i < pouletCount; i++) {
         const startX = (i - (pouletCount - 1) / 2) * spacing;
@@ -1321,8 +1321,9 @@ pouletStartBtn.addEventListener('click', async () => {
         let pos2 = c2.currentPos;
         
         // Trajectoires écartées de 100px l'une de l'autre (y: -50 et y: +50)
-        gsap.to(c1.element, { x: pos2, y: -50, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
-        gsap.to(c2.element, { x: pos1, y: 50, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        // Trajectoires très écartées (y: -85 et y: 85) pour éviter le crash en vol
+        gsap.to(c1.element, { x: pos2, y: -85, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        gsap.to(c2.element, { x: pos1, y: 85, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
         
         c1.currentPos = pos2;
         c2.currentPos = pos1;
