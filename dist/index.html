@@ -417,7 +417,7 @@
   </div>
 </div>
   
-  <!-- ==================================================================== -->
+<!-- ==================================================================== -->
   <!--                      JEU 6 : POULET BITE                             -->
   <!-- ==================================================================== -->
   <div id="poulet-screen" class="screen landscape-layout">
@@ -475,8 +475,10 @@
     </div>
     
     <div class="right-panel">
-      <div class="game-view" style="background: radial-gradient(circle at center, #422006 0%, #170700 100%); display:flex; flex-direction:column; justify-content:center; align-items:center; overflow: hidden;">
-        <div id="poulet-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px; z-index: 10;">Prêt ?</div>
+      <!-- J'ai ajouté 'position: relative' ici pour empêcher le texte de s'enfuir ! -->
+      <div class="game-view" style="background: radial-gradient(circle at center, #422006 0%, #170700 100%); display:flex; flex-direction:column; justify-content:center; align-items:center; overflow: hidden; position: relative;">
+        <!-- J'ai ajouté 'white-space: nowrap' pour que le texte reste sur une ligne -->
+        <div id="poulet-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px; z-index: 10; white-space: nowrap;">Prêt ?</div>
         
         <!-- Table de jeu -->
         <div class="poulet-table" id="poulet-table">
@@ -486,7 +488,9 @@
     </div>
   </div>
 
- <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js'></script><script  src="./script.js"></script>
+</div> <!-- CETTE BALISE EST CRUCIALE : Elle referme proprement le app-container APRÈS le jeu -->
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="./script.js"></script>
 </body>
 </html>
