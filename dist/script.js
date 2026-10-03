@@ -1258,7 +1258,8 @@ function buildCloches() {
     clochesData = [];
     winningIndex = Math.floor(Math.random() * pouletCount); 
     
-    const spacing = window.innerWidth < 768 ? 90 : 120; // Plus compact pour que 6 cloches rentrent
+    // Espacement sécurisé pour ne pas se toucher au repos
+    const spacing = window.innerWidth < 768 ? 90 : 120; 
     
     for (let i = 0; i < pouletCount; i++) {
         const startX = (i - (pouletCount - 1) / 2) * spacing;
@@ -1280,19 +1281,6 @@ function buildCloches() {
     }
 }
 
-// Attachée au HTML directement (plus de bug de bouton)
-window.resetPouletUI = function() {
-    pouletIsPlaying = false;
-    document.getElementById('poulet-betting-area').classList.remove('hidden');
-    document.getElementById('poulet-result-actions').classList.add('hidden');
-    pouletJumpscare.classList.add('hidden'); // Cache le monstre
-    pouletStartBtn.disabled = false;
-    pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
-    pouletMultDisplay.className = "hilo-mult-header";
-    updatePouletOdds();
-    buildCloches(); 
-};
-
 pouletStartBtn.addEventListener('click', async () => {
     if (!pouletBet || pouletBet < 1) return animateBtnError('poulet-start-btn');
     
@@ -1308,7 +1296,10 @@ pouletStartBtn.addEventListener('click', async () => {
     await new Promise(r => setTimeout(r, 800));
     
     const totalSwaps = 5 + (pouletCount * 2); 
-    const animDuration = 0.5 / pouletSpeed; 
+    
+    // CORRECTION MAJEURE : On sépare les temps
+    const halfAnim = 0.35 / pouletSpeed; // Temps pour monter en l'air
+    const fullAnim = halfAnim * 2;       // Temps total pour aller de gauche à droite
     
     for (let s = 0; s < totalSwaps; s++) {
         let idx1 = Math.floor(Math.random() * pouletCount);
@@ -1320,15 +1311,19 @@ pouletStartBtn.addEventListener('click', async () => {
         let pos1 = c1.currentPos;
         let pos2 = c2.currentPos;
         
-        // Trajectoires écartées de 100px l'une de l'autre (y: -50 et y: +50)
-        // Trajectoires très écartées (y: -85 et y: 85) pour éviter le crash en vol
-        gsap.to(c1.element, { x: pos2, y: -85, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
-        gsap.to(c2.element, { x: pos1, y: 85, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        // 1. Le X va à sa nouvelle position (SANS EFFET YOYO !)
+        gsap.to(c1.element, { x: pos2, duration: fullAnim, ease: "power1.inOut" });
+        gsap.to(c2.element, { x: pos1, duration: fullAnim, ease: "power1.inOut" });
+        
+        // 2. Le Y monte et redescend en arc de cercle (AVEC EFFET YOYO)
+        gsap.to(c1.element, { y: -70, duration: halfAnim, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        gsap.to(c2.element, { y: 70, duration: halfAnim, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
         
         c1.currentPos = pos2;
         c2.currentPos = pos1;
         
-        await new Promise(r => setTimeout(r, animDuration * 1000));
+        // 3. On attend exactement la fin de l'animation avant de lancer la suivante
+        await new Promise(r => setTimeout(r, fullAnim * 1000 + 50));
     }
     
     pouletMultDisplay.textContent = "OÙ EST LE POULET ?";
