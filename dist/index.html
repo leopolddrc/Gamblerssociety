@@ -417,8 +417,8 @@
   </div>
   
 <!-- ==================================================================== -->
-<!--                      JEU 6 : POULET BITE                             -->
-<!-- ==================================================================== -->
+  <!--                      JEU 6 : POULET BITE                             -->
+  <!-- ==================================================================== -->
   <div id="poulet-screen" class="screen landscape-layout">
     <button class="menu-home-btn" onclick="showScreen('select')">🏠 Menu</button>
     <div class="left-panel">
@@ -450,39 +450,45 @@
         
         <label style="margin-top: 15px;">Nombre de cloches :</label>
         <select id="poulet-count-select" style="margin-bottom: 15px;">
-            <option value="3">3 Cloches (Facile)</option>
-            <option value="4">4 Cloches (Moyen)</option>
-            <option value="5">5 Cloches (Difficile)</option>
+            <option value="3">3 Cloches</option>
+            <option value="4">4 Cloches</option>
+            <option value="5">5 Cloches</option>
+            <option value="6">6 Cloches (Chaos)</option>
         </select>
 
         <label>Vitesse du cuistot :</label>
         <select id="poulet-speed-select" style="margin-bottom: 15px;">
-            <option value="1">Lente (x1.0)</option>
-            <option value="1.5">Rapide (x1.5)</option>
-            <option value="2.5">Éclair (x2.5)</option>
+            <option value="1">Normale (x1.0)</option>
+            <option value="1.3">Rapide (x1.3)</option>
+            <option value="1.8">Éclair (x1.8)</option>
         </select>
         
-        <div class="roulette-odds-info" id="poulet-odds-info">Multiplicateur : 2.50x</div>
+        <div class="roulette-odds-info" id="poulet-odds-info">Multiplicateur : 1.50x</div>
         
         <button id="poulet-start-btn" class="action-btn" style="background: #eab308; color: black; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);">MÉLANGER 🌪️</button>
       </div>
       
+      <!-- Boutons corrigés avec onclick direct -->
       <div id="poulet-result-actions" class="hidden panel-section">
-        <button class="secondary-btn btn-play-again" data-target="poulet">🔄 Rejouer</button>
-        <button class="primary-btn btn-return-menu">✅ Quitter</button>
+        <button class="secondary-btn" onclick="resetPouletUI()">🔄 Rejouer</button>
+        <button class="primary-btn" onclick="showScreen('select')">✅ Quitter</button>
       </div>
     </div>
     
     <div class="right-panel">
-      <!-- J'ai ajouté 'position: relative' ici pour empêcher le texte de s'enfuir ! -->
       <div class="game-view" style="background: radial-gradient(circle at center, #422006 0%, #170700 100%); display:flex; flex-direction:column; justify-content:center; align-items:center; overflow: hidden; position: relative;">
-        <!-- J'ai ajouté 'white-space: nowrap' pour que le texte reste sur une ligne -->
+        
         <div id="poulet-multiplier-display" class="hilo-mult-header" style="position: absolute; top: 20px; z-index: 10; white-space: nowrap;">Prêt ?</div>
         
-        <!-- Table de jeu -->
         <div class="poulet-table" id="poulet-table">
-            <!-- Les cloches seront générées ici par JS -->
+            <!-- Cloches -->
         </div>
+
+        <!-- IMAGE GÉANTE CACHÉE -->
+        <div id="poulet-jumpscare" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); pointer-events: none;">
+            <img src="poulet-bite.png" style="width: 80%; max-width: 400px; animation: popIn 0.3s ease-out;">
+        </div>
+
       </div>
     </div>
   </div>

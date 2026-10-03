@@ -1217,7 +1217,7 @@ function finishRoulette(landedIndex, loadedCount) {
 let pouletBet = 0;
 let pouletCount = 3;
 let pouletSpeed = 1;
-let pouletMult = 2.50;
+let pouletMult = 1.50;
 let pouletIsPlaying = false;
 let winningIndex = 0;
 let clochesData = [];
@@ -1227,6 +1227,7 @@ const pouletMultDisplay = document.getElementById('poulet-multiplier-display');
 const pouletTable = document.getElementById('poulet-table');
 const pouletCountSelect = document.getElementById('poulet-count-select');
 const pouletSpeedSelect = document.getElementById('poulet-speed-select');
+const pouletJumpscare = document.getElementById('poulet-jumpscare');
 
 document.querySelectorAll('.poulet-bet').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1243,8 +1244,9 @@ document.getElementById('poulet-custom-bet').addEventListener('input', (e) => {
 function updatePouletOdds() {
     pouletCount = parseInt(pouletCountSelect.value);
     pouletSpeed = parseFloat(pouletSpeedSelect.value);
-    // Calcul du gain : (Nb Cloches - 1) * Vitesse. Ex: 5 cloches éclair = 4 * 2.5 = x10 !
-    pouletMult = (pouletCount - 1) * pouletSpeed * 1.25; 
+    
+    // Nouvelle formule plus équilibrée : Base = 0.5 par cloche * Vitesse
+    pouletMult = (pouletCount * 0.5) * pouletSpeed; 
     document.getElementById('poulet-odds-info').textContent = `Gain potentiel : ${pouletMult.toFixed(2)}x`;
 }
 
@@ -1254,19 +1256,18 @@ pouletSpeedSelect.addEventListener('change', updatePouletOdds);
 function buildCloches() {
     pouletTable.innerHTML = '';
     clochesData = [];
-    winningIndex = Math.floor(Math.random() * pouletCount); // On choisit où est le Poulet Frites
+    winningIndex = Math.floor(Math.random() * pouletCount); 
     
-    const spacing = window.innerWidth < 768 ? 95 : 140;
+    const spacing = window.innerWidth < 768 ? 70 : 100; // Plus compact pour que 6 cloches rentrent
     
     for (let i = 0; i < pouletCount; i++) {
         const startX = (i - (pouletCount - 1) / 2) * spacing;
         
         const wrapper = document.createElement('div');
-        wrapper.className = 'cloche-wrapper cloche-lifted'; // Soulevé par défaut
+        wrapper.className = 'cloche-wrapper cloche-lifted'; 
         gsap.set(wrapper, { x: startX, y: 0 });
         
-        // C'est ici qu'on charge ton image pour le perdant, et un emoji/image pour le gagnant !
-        const content = (i === winningIndex) ? '🍗🍟' : '<img src="poulet-bite.png" alt="Poulet Bite">';
+        const content = (i === winningIndex) ? '🍗🍟' : '<img src="poulet-bite.png" alt="Perdu">';
         
         wrapper.innerHTML = `
             <div class="cloche-content">${content}</div>
@@ -1275,21 +1276,22 @@ function buildCloches() {
         
         pouletTable.appendChild(wrapper);
         clochesData.push({ element: wrapper, currentPos: startX });
-        
         wrapper.addEventListener('click', () => handleClocheClick(i));
     }
 }
 
-function resetPouletUI() {
+// Attachée au HTML directement (plus de bug de bouton)
+window.resetPouletUI = function() {
     pouletIsPlaying = false;
     document.getElementById('poulet-betting-area').classList.remove('hidden');
     document.getElementById('poulet-result-actions').classList.add('hidden');
+    pouletJumpscare.classList.add('hidden'); // Cache le monstre
     pouletStartBtn.disabled = false;
     pouletMultDisplay.textContent = "Trouve le Poulet Frites !";
     pouletMultDisplay.className = "hilo-mult-header";
     updatePouletOdds();
-    buildCloches(); // Reconstruit la table
-}
+    buildCloches(); 
+};
 
 pouletStartBtn.addEventListener('click', async () => {
     if (!pouletBet || pouletBet < 1) return animateBtnError('poulet-start-btn');
@@ -1300,73 +1302,64 @@ pouletStartBtn.addEventListener('click', async () => {
     pouletIsPlaying = true;
     document.getElementById('poulet-betting-area').classList.add('hidden');
     pouletMultDisplay.textContent = "MÉLANGE...";
+    pouletJumpscare.classList.add('hidden');
     
-    // 1. On baisse toutes les cloches
     document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.remove('cloche-lifted'));
-    
-    // Petite pause de suspense avant le mélange
     await new Promise(r => setTimeout(r, 800));
     
-    // 2. Le mélange GSAP
-    const totalSwaps = 6 + (pouletCount * 2); // Plus il y a de cloches, plus on mélange
-    const animDuration = 0.6 / pouletSpeed; // Vitesse influencée par le paramètre
+    const totalSwaps = 5 + (pouletCount * 2); 
+    const animDuration = 0.5 / pouletSpeed; 
     
     for (let s = 0; s < totalSwaps; s++) {
-        // Choisit deux cloches au hasard à inverser
         let idx1 = Math.floor(Math.random() * pouletCount);
         let idx2 = Math.floor(Math.random() * pouletCount);
-        while (idx1 === idx2) idx2 = Math.floor(Math.random() * pouletCount); // S'assure qu'elles sont différentes
+        while (idx1 === idx2) idx2 = Math.floor(Math.random() * pouletCount); 
         
         let c1 = clochesData[idx1];
         let c2 = clochesData[idx2];
         let pos1 = c1.currentPos;
         let pos2 = c2.currentPos;
         
-        // Animation : Une passe devant (y:-20), l'autre derrière (y:20)
-        gsap.to(c1.element, { x: pos2, y: -20, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1 });
-        gsap.to(c2.element, { x: pos1, y: 20, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1 });
+        // Trajectoires écartées de 100px l'une de l'autre (y: -50 et y: +50)
+        gsap.to(c1.element, { x: pos2, y: -50, duration: animDuration, zIndex: 10, yoyo: true, repeat: 1, ease: "sine.inOut" });
+        gsap.to(c2.element, { x: pos1, y: 50, duration: animDuration, zIndex: 5, yoyo: true, repeat: 1, ease: "sine.inOut" });
         
-        // Mise à jour de leurs coordonnées
         c1.currentPos = pos2;
         c2.currentPos = pos1;
         
         await new Promise(r => setTimeout(r, animDuration * 1000));
     }
     
-    // Fin du mélange, on active le clic
-    pouletMultDisplay.textContent = "OÙ EST LE POULET FRITES ?";
+    pouletMultDisplay.textContent = "OÙ EST LE POULET ?";
     document.querySelectorAll('.cloche-wrapper').forEach(c => c.classList.add('cloche-interactive'));
 });
 
 function handleClocheClick(clickedIndex) {
-    if (!pouletIsPlaying) return; // Ignore si pas en jeu
+    if (!pouletIsPlaying) return; 
     
-    // On bloque les autres cloches
     const wrappers = document.querySelectorAll('.cloche-wrapper');
     wrappers.forEach(c => c.classList.remove('cloche-interactive'));
-    
-    // On soulève la cloche cliquée
     wrappers[clickedIndex].classList.add('cloche-lifted');
     
     if (clickedIndex === winningIndex) {
-        // GAGNÉ
         turnBalance += Math.round(pouletBet * pouletMult);
         updateLiveSummary();
         pouletMultDisplay.textContent = "GAGNÉ ! " + pouletMult.toFixed(2) + "x";
         pouletMultDisplay.classList.add('cashed-out');
         if (typeof gererMusiques === "function") gererMusiques(pouletMult);
     } else {
-        // PERDU : C'est le Poulet Bite
-        pouletMultDisplay.textContent = "POULET BITE ! 🍆";
+        pouletMultDisplay.textContent = "PERDU !";
         pouletMultDisplay.classList.add('crashed');
-        gsap.to(wrappers[clickedIndex], { x: "+=10", duration: 0.05, yoyo: true, repeat: 7 }); // Tremblement de terreur
+        gsap.to(wrappers[clickedIndex], { x: "+=10", duration: 0.05, yoyo: true, repeat: 7 }); 
+        
+        // Apparition de l'image géante
+        pouletJumpscare.classList.remove('hidden');
         if (typeof gererMusiques === "function") gererMusiques(1.0);
     }
     
-    // Soulève les autres cloches 1 seconde plus tard pour montrer la solution
     setTimeout(() => {
         wrappers.forEach(c => c.classList.add('cloche-lifted'));
         document.getElementById('poulet-result-actions').classList.remove('hidden');
         pouletIsPlaying = false;
-    }, 1500);
+    }, 1200);
 }
